@@ -37,14 +37,14 @@ const aiApps = ref([
     id: 1,
     title: 'AI 聊天',
     description: '多模态对话机器人，支持图片、音频等',
-    route: '/ai-chat',
+    route: '/ai/ai-chat',
     icon: ChatBubbleLeftRightIcon
   },
   {
     id: 2,
     title: '猫猫模拟器',
     description: '一个帮助你练习哄人开心的小游戏',
-    route: '/game',
+    route: '/ai/game',
     icon: HeartIcon,
     iconClass: 'heart-icon'
   },
@@ -52,14 +52,14 @@ const aiApps = ref([
     id: 3,
     title: '智能客服',
     description: '24小时在线的智能咨询师',
-    route: '/customer-service',
+    route: '/ai/customer-service',
     icon: UserGroupIcon
   },
   {
     id: 4,
     title: 'ChatPDF',
     description: '打造你的个人知识库，与知识库自由对话',
-    route: '/chat-pdf',
+    route: '/ai/chat-pdf',
     icon: DocumentTextIcon
   }
 ])

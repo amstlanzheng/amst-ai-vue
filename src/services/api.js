@@ -11,6 +11,10 @@ export const chatAPI = {
       
       const response = await fetch(url, {
         method: 'POST',
+        credentials: 'include', // 添加凭证支持
+        headers: {
+          'Accept': 'application/json',
+        },
         body: data instanceof FormData ? data : 
           new URLSearchParams({ prompt: data })
       })
@@ -27,12 +31,20 @@ export const chatAPI = {
   },
 
   // 获取聊天历史列表
-  async getChatHistory(type = 'chat') {  // 添加类型参数
+  async getChatHistory(type = 'chat') {
     try {
-      const response = await fetch(`${BASE_URL}/ai/history/${type}`)
+      const response = await fetch(`${BASE_URL}/ai/history/${type}`, {
+        method: 'GET',
+        credentials: 'include', // 添加凭证支持
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
+      
       const chatIds = await response.json()
       // 转换为前端需要的格式
       return chatIds.map(id => ({
@@ -48,12 +60,20 @@ export const chatAPI = {
   },
 
   // 获取特定对话的消息历史
-  async getChatMessages(chatId, type = 'chat') {  // 添加类型参数
+  async getChatMessages(chatId, type = 'chat') {
     try {
-      const response = await fetch(`${BASE_URL}/ai/history/${type}/${chatId}`)
+      const response = await fetch(`${BASE_URL}/ai/history/${type}/${chatId}`, {
+        method: 'GET',
+        credentials: 'include', // 添加凭证支持
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
+      
       const messages = await response.json()
       // 添加时间戳
       return messages.map(msg => ({
@@ -69,8 +89,18 @@ export const chatAPI = {
   // 发送游戏消息
   async sendGameMessage(prompt, chatId) {
     try {
-      const response = await fetch(`${BASE_URL}/ai/game?prompt=${encodeURIComponent(prompt)}&chatId=${chatId}`, {
+      const url = new URL(`${BASE_URL}/ai/game`)
+      url.searchParams.append('prompt', prompt)
+      if (chatId) {
+        url.searchParams.append('chatId', chatId)
+      }
+
+      const response = await fetch(url, {
         method: 'POST',
+        credentials: 'include', // 添加凭证支持
+        headers: {
+          'Accept': 'application/json',
+        }
       })
 
       if (!response.ok) {
@@ -87,8 +117,18 @@ export const chatAPI = {
   // 发送客服消息
   async sendServiceMessage(prompt, chatId) {
     try {
-      const response = await fetch(`${BASE_URL}/ai/service?prompt=${encodeURIComponent(prompt)}&chatId=${chatId}`, {
+      const url = new URL(`${BASE_URL}/ai/service`)
+      url.searchParams.append('prompt', prompt)
+      if (chatId) {
+        url.searchParams.append('chatId', chatId)
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
+        credentials: 'include', // 添加凭证支持
+        headers: {
+          'Accept': 'application/json',
+        }
       })
 
       if (!response.ok) {
@@ -105,11 +145,25 @@ export const chatAPI = {
   // 发送 PDF 问答消息
   async sendPdfMessage(prompt, chatId) {
     try {
-      const response = await fetch(`${BASE_URL}/ai/pdf/chat?prompt=${encodeURIComponent(prompt)}&chatId=${chatId}`, {
+      const url = new URL(`${BASE_URL}/ai/pdf/chat`)
+      url.searchParams.append('prompt', prompt)
+      if (chatId) {
+        url.searchParams.append('chatId', chatId)
+      }
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+      const response = await fetch(url, {
         method: 'GET',
-        // 确保使用流式响应
-        signal: AbortSignal.timeout(30000) // 30秒超时
+        credentials: 'include', // 添加凭证支持
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`)
@@ -121,5 +175,23 @@ export const chatAPI = {
       console.error('API Error:', error)
       throw error
     }
+  },
+
+  // 可选：添加一个通用的健康检查或测试方法
+  async checkAuth() {
+    try {
+      const response = await fetch(`${BASE_URL}/ai/auth-check`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      
+      return response.ok
+    } catch (error) {
+      console.error('Auth check failed:', error)
+      return false
+    }
   }
-} 
+}
