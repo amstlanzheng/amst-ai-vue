@@ -16,6 +16,7 @@ router.beforeEach((to, from, next) => {
 
   if (toURL.startsWith("/admin")) {
     if (!loginUser || loginUser.userRole !== "1") {
+      console.log("请先登录管理员账号！！", loginUser);
       message.error("请先登录管理员账号！！");
       next("/user/login?redirect=" + to.fullPath);
     }

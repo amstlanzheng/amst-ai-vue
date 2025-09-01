@@ -77,3 +77,13 @@ export const deleteUser = async (id: any) => {
 }
 
 
+export const userUpdate = async (param : any) => {
+
+    return await myAxios.request({
+            url: '/api/user/update',
+            method: 'post',
+            data: param
+        }
+    )
+
+}

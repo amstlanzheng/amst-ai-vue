@@ -19,6 +19,24 @@
       :pagination="pagination"
       :bordered="false"
     />
+
+ <n-modal v-model:show="showModal">
+    <n-card
+      style="width: 600px"
+      title="修改"
+      :bordered="false"
+      size="huge"
+      role="dialog"
+      aria-modal="true"
+    >
+    <UserUpdatePage 
+      :user-data="currentUser || {}" 
+      @cancel="showModal = false" 
+      @update-success="handleUpdateSuccess">
+    </UserUpdatePage>
+    </n-card>
+  </n-modal>
+
   </div>
 </template>
 
@@ -29,6 +47,7 @@ import { NButton, useMessage, NImage, useDialog } from "naive-ui";
 import { defineComponent, h, ref, onMounted } from "vue";
 import { deleteUser } from "@/services/user";
 import type { InputInst } from "naive-ui";
+import UserUpdatePage from "./UserUpdatePage.vue";
 interface User {
   id: string;
   username: string;
@@ -154,7 +173,13 @@ function createColumns({
 }
 
 export default defineComponent({
+    components: {
+    UserUpdatePage
+  },
   setup() {
+        // 添加一个变量来存储当前选中的用户
+    const currentUser = ref<User | null>(null);
+    const showModal = ref(false);
     const inputInstRef = ref<InputInst | null>(null);
     const inputValue = ref("");
     // 在组件挂载时执行获取用户列表
@@ -173,11 +198,24 @@ export default defineComponent({
         message.error("查询失败：" + res.data.description);
       }
     };
+    // 处理更新成功的回调
+    const handleUpdateSuccess = () => {
+      // 关闭模态框
+      showModal.value = false;
+      // 重新加载用户列表
+      getUserList();
+      // 显示成功消息
+      message.success("用户信息更新成功");
+    };
+
 
     return {
+      showModal,
+      currentUser,
       inputInstRef,
       inputValue,
       data,
+      handleUpdateSuccess,
       columns: createColumns({
         deleteUserById(row: User) {
           deleteUser(row.id).then((res) => {
@@ -203,7 +241,11 @@ export default defineComponent({
           });
         },
 
-        updateUserById(row: any) {},
+        updateUserById(row: User) {
+          // 设置当前用户数据并显示模态框
+          currentUser.value = row;
+          showModal.value = true;
+        },
       }),
 
       handleSearchButtonClick() {
