@@ -6,7 +6,7 @@
         <div class="sidebar-header">
           <a href="#" class="logo-link" @click="handleLogoClick">
             <DocumentTextIcon class="logo" />
-            <h1 class="title">ChatPDF</h1>
+            <h1 class="title">ChatMD</h1>
           </a>
         </div>
 
@@ -26,7 +26,7 @@
             @click="loadChat(chat.id)"
           >
             <DocumentTextIcon class="icon" />
-            <span class="title">{{ chat.title || 'PDF对话' }}</span>
+            <span class="title">{{ chat.title || 'Markdown对话' }}</span>
           </div>
         </div>
       </div>
@@ -34,9 +34,9 @@
       <!-- 主要内容区域 -->
       <div class="chat-main">
         <!-- 未上传文件时显示上传界面 -->
-        <div v-if="!currentPdfName" class="upload-welcome">
+        <div v-if="!currentMdContent || currentMdContent === ''" class="upload-welcome">
           <h1 class="main-title">
-            与任何 <span class="highlight">PDF</span> 对话
+            与任何 <span class="highlight">Markdown</span> 对话
           </h1>
           <div 
             class="drop-zone"
@@ -59,10 +59,10 @@
               </div>
               <template v-else>
                 <DocumentArrowUpIcon class="upload-icon" />
-                <p class="upload-text">点击上传，或将PDF拖拽到此处</p>
+                <p class="upload-text">点击上传，或将Markdown文件拖拽到此处</p>
                 <input 
                   type="file"
-                  accept=".pdf"
+                  accept=".md,.markdown"
                   @change="handleFileUpload"
                   :disabled="isUploading"
                   class="file-input"
@@ -73,7 +73,7 @@
                   @click="triggerFileInput"
                 >
                   <ArrowUpTrayIcon class="icon" />
-                  上传PDF
+                  上传Markdown
                 </button>
               </template>
             </div>
@@ -82,11 +82,15 @@
 
         <!-- 已上传文件时显示分栏界面 -->
         <div v-else class="split-view">
-          <!-- PDF 预览组件 -->
-          <PDFViewer 
-            :file="pdfFile"
-            :fileName="currentPdfName"
-          />
+
+          <!-- Markdown 预览组件 -->
+          <div class="markdown-view">
+            <div class="markdown-header">
+              <DocumentTextIcon class="icon" />
+              <span class="filename">{{ currentMdName }}</span>
+            </div>
+            <div class="markdown-content" v-html="renderedMdContent"></div>
+          </div>
 
           <!-- 聊天区域 -->
           <div class="chat-view">
@@ -123,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch, onUnmounted } from 'vue'
+import { ref, onMounted, nextTick, watch, onUnmounted, computed } from 'vue'
 import { useDark } from '@vueuse/core'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -139,7 +143,6 @@ import {
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 import { useRouter } from 'vue-router'
-import PDFViewer from '../components/PDFViewer.vue'
 
 const isDark = useDark()
 const router = useRouter()
@@ -151,7 +154,8 @@ const isUploading = ref(false)
 const currentChatId = ref(null)
 const currentMessages = ref([])
 const chatHistory = ref([])
-const currentPdfName = ref('')
+const currentMdName = ref('')
+const currentMdContent = ref('')
 const isDragging = ref(false)
 const BASE_URL = 'http://localhost:8080'
 
@@ -160,6 +164,12 @@ marked.setOptions({
   breaks: true,
   gfm: true,
   sanitize: false
+})
+
+// 计算渲染后的Markdown内容
+const renderedMdContent = computed(() => {
+  if (!currentMdContent.value) return ''
+  return DOMPurify.sanitize(marked(currentMdContent.value))
 })
 
 // 自动调整输入框高度
@@ -180,18 +190,15 @@ const scrollToBottom = async () => {
 }
 
 // 添加下载状态
-const isDownloadingPdf = ref(false)
-
-// 添加 pdfFile ref
-const pdfFile = ref(null)
+const isDownloadingMd = ref(false)
 
 // 修改资源清理函数
 const cleanupResources = () => {
-  currentPdfName.value = ''
+  currentMdName.value = ''
+  currentMdContent.value = ''
   currentMessages.value = []
-  pdfFile.value = null
   currentChatId.value = null
-  isDownloadingPdf.value = false
+  isDownloadingMd.value = false
   isUploading.value = false
   uploadingFileName.value = ''
   userInput.value = ''
@@ -217,8 +224,8 @@ const startNewChat = () => {
     cleanupResources()
     
     // 重置文件相关状态
-    pdfFile.value = null
-    currentPdfName.value = ''
+    currentMdContent.value = ''
+    currentMdName.value = ''
     currentChatId.value = null
     
     // 重置消息
@@ -252,36 +259,59 @@ const loadChat = async (chatId) => {
   
   try {
     // 加载消息历史
-    const messages = await chatAPI.getChatMessages(chatId, 'pdf')
+    const messages = await chatAPI.getChatMessages(chatId, 'md')
     currentMessages.value = messages.map(msg => ({
       ...msg,
       isMarkdown: msg.role === 'assistant'
     }))
 
-    // 从服务器获取 PDF
-    isDownloadingPdf.value = true
-    const response = await fetch(`${BASE_URL}/ai/pdf/file/${chatId}`)
-    if (!response.ok) throw new Error('获取 PDF 失败')
+    // 从服务器获取 Markdown 文件下载链接
+    isDownloadingMd.value = true
+    const response = await fetch(`${BASE_URL}/ai/md/file/${chatId}`, {
+      credentials: 'include' // 确保携带 cookie/session 信息
+    })
+    if (!response.ok) throw new Error('获取 Markdown 失败')
     
-    // 获取文件名
-    const contentDisposition = response.headers.get('content-disposition')
-    let filename = 'document.pdf'
-    if (contentDisposition) {
-      const matches = contentDisposition.match(/filename=["']?([^"']+)["']?/)
-      if (matches && matches[1]) {
-        filename = decodeURIComponent(matches[1])
+    // 解析 JSON 响应以获取下载链接和文件名
+    const result = await response.json()
+    if (result.code !== 1) throw new Error('获取文件下载链接失败')
+    
+    // 从响应中获取文件名和下载链接
+    let filename = 'document.md'
+    if (result.data.fileName) {
+      console.log('filename:', result.data)
+      // 使用后端提供的文件名
+      filename = result.data.fileName
+    } else if (result.data.fileUrl) {
+      // 从下载链接中提取文件名
+      try {
+        const url = new URL(result.data.fileUrl)
+        const pathParts = url.pathname.split('/')
+        if (pathParts.length > 0) {
+          const lastPart = pathParts[pathParts.length - 1]
+          console.log('filename:', lastPart)
+          if (lastPart) {
+            filename = lastPart
+          }
+        }
+      } catch (e) {
+        console.warn('无法从URL解析文件名:', e)
       }
     }
     
     // 更新当前文件名和历史记录中的标题
-    currentPdfName.value = filename
+    currentMdName.value = filename
     const chatIndex = chatHistory.value.findIndex(c => c.id === chatId)
     if (chatIndex !== -1) {
       chatHistory.value[chatIndex].title = filename
     }
     
-    const blob = await response.blob()
-    pdfFile.value = new File([blob], filename, { type: 'application/pdf' })
+    // 下载文件内容
+    const fileUrl = result.data.fileUrl || result.data
+    const fileResponse = await fetch(fileUrl)
+    if (!fileResponse.ok) throw new Error('下载文件失败')
+    const text = await fileResponse.text()
+    currentMdContent.value = text
   } catch (error) {
     console.error('加载失败:', error)
     const errorMessage = {
@@ -292,14 +322,14 @@ const loadChat = async (chatId) => {
     }
     currentMessages.value.push(errorMessage)
   } finally {
-    isDownloadingPdf.value = false
+    isDownloadingMd.value = false
   }
 }
 
 // 加载聊天历史
 const loadChatHistory = async () => {
   try {
-    const history = await chatAPI.getChatHistory('pdf')
+    const history = await chatAPI.getChatHistory('md')
     chatHistory.value = history || []
     if (history && history.length > 0) {
       await loadChat(history[0].id)
@@ -321,9 +351,9 @@ const handleDrop = async (event) => {
   // 获取第一个文件
   const file = files[0]
   
-  // 检查是否为 PDF 文件
-  if (file.type !== 'application/pdf') {
-    alert('请上传 PDF 文件')
+  // 检查是否为 Markdown 文件
+  if (!file.type.includes('markdown') && !file.name.match(/\.(md|markdown)$/i)) {
+    alert('请上传 Markdown 文件')
     return
   }
   
@@ -337,29 +367,31 @@ const handleDrop = async (event) => {
     formData.append('file', file)
     
     // 生成临时 chatId 或使用现有的
-    const uploadChatId = currentChatId.value || `pdf_${Date.now()}`
+    const uploadChatId = currentChatId.value || `md_${Date.now()}`
     
     // 发送上传请求，修正 API 路径
-    const response = await fetch(`${BASE_URL}/ai/pdf/upload/${uploadChatId}`, {
+    const response = await fetch(`${BASE_URL}/ai/md/upload/${uploadChatId}`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      credentials: 'include'  // 确保携带 cookie/session 信息
     })
-    
+    console.log('上传结果:', response)
     if (!response.ok) {
       throw new Error(`上传失败: ${response.status}`)
     }
     
     const data = await response.json()
+    const text = await file.text() // 读取文件内容
     
     // 保存聊天 ID 和文件名
     currentChatId.value = data.chatId || uploadChatId
-    currentPdfName.value = file.name
-    pdfFile.value = file
+    currentMdName.value = file.name
+    currentMdContent.value = text
     
     // 添加到聊天历史
     const newChat = {
       id: currentChatId.value,
-      title: `PDF对话: ${file.name.slice(0, 20)}${file.name.length > 20 ? '...' : ''}`
+      title: `Markdown对话: ${file.name.slice(0, 20)}${file.name.length > 20 ? '...' : ''}`
     }
     
     // 更新聊天历史 - 避免重复添加
@@ -373,7 +405,7 @@ const handleDrop = async (event) => {
     // 添加系统消息
     currentMessages.value.push({
       role: 'assistant',
-      content: `已上传 PDF 文件: ${file.name}。您可以开始提问了。`,
+      content: `已上传 Markdown 文件: ${file.name}。您可以开始提问了。`,
       timestamp: new Date(),
       isMarkdown: true
     })
@@ -442,7 +474,32 @@ const sendMessage = async () => {
     isStreaming.value = true
     
     // 发送请求到服务器
-    const reader = await chatAPI.sendPdfMessage(input, currentChatId.value)
+    const url = new URL(`${BASE_URL}/ai/md/chat`)
+    url.searchParams.append('prompt', input)
+    if (currentChatId.value) {
+      url.searchParams.append('chatId', currentChatId.value)
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: controller.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`)
+    }
+
+    // 返回可读流
+    const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let result = ''
     
@@ -469,7 +526,7 @@ const sendMessage = async () => {
     }
     
   } catch (error) {
-    console.error('发送消息失败:', error)
+    console.error('发送消息失败10001:', error)
     currentMessages.value[assistantMessageIndex] = {
       role: 'assistant',
       content: '发送消息失败，请重试。',
@@ -489,9 +546,9 @@ const handleFileUpload = async (event) => {
   
   const file = files[0]
   
-  // 检查是否为 PDF 文件
-  if (file.type !== 'application/pdf') {
-    alert('请上传 PDF 文件')
+  // 检查是否为 Markdown 文件
+  if (!file.type.includes('markdown') && !file.name.match(/\.(md|markdown)$/i)) {
+    alert('请上传 Markdown 文件')
     return
   }
   
@@ -505,29 +562,32 @@ const handleFileUpload = async (event) => {
     formData.append('file', file)
     
     // 生成临时 chatId 或使用现有的
-    const uploadChatId = currentChatId.value || `pdf_${Date.now()}`
+    const uploadChatId = currentChatId.value || `md_${Date.now()}`
     
     // 发送上传请求，修正 API 路径
-    const response = await fetch(`${BASE_URL}/ai/pdf/upload/${uploadChatId}`, {
+    const response = await fetch(`${BASE_URL}/ai/md/upload/${uploadChatId}`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      credentials: 'include'  // 确保携带 cookie/session 信息
     })
-    
+
+        console.log('上传结果:', response)
     if (!response.ok) {
       throw new Error(`上传失败: ${response.status}`)
     }
     
     const data = await response.json()
+    const text = await file.text() // 读取文件内容
     
     // 保存聊天 ID 和文件名
     currentChatId.value = data.chatId || uploadChatId
-    currentPdfName.value = file.name
-    pdfFile.value = file
+    currentMdName.value = file.name
+    currentMdContent.value = text
     
     // 添加到聊天历史
     const newChat = {
       id: currentChatId.value,
-      title: `PDF对话: ${file.name.slice(0, 20)}${file.name.length > 20 ? '...' : ''}`
+      title: `Markdown对话: ${file.name.slice(0, 20)}${file.name.length > 20 ? '...' : ''}`
     }
     
     // 更新聊天历史 - 避免重复添加
@@ -541,7 +601,7 @@ const handleFileUpload = async (event) => {
     // 添加系统消息
     currentMessages.value.push({
       role: 'assistant',
-      content: `已上传 PDF 文件: ${file.name}。您可以开始提问了。`,
+      content: `已上传 Markdown 文件: ${file.name}。您可以开始提问了。`,
       timestamp: new Date(),
       isMarkdown: true
     })
@@ -1104,6 +1164,45 @@ onUnmounted(() => {
   display: flex;
   overflow: hidden;
 
+  .markdown-view {
+    flex: 1;
+    max-width: 50%;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+    background: #fff;
+
+    .markdown-header {
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #f8f9fa;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
+      .icon {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: #666;
+      }
+
+      .filename {
+        flex: 1;
+        font-weight: 500;
+        color: #333;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .markdown-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+  }
+
   .pdf-view {
     flex: 1;
     max-width: 50%;
@@ -1367,6 +1466,28 @@ onUnmounted(() => {
     .chat-view {
       background: #1a1a1a;
     }
+    
+    .markdown-view {
+      border-right-color: rgba(255, 255, 255, 0.1);
+      background: #1a1a1a;
+
+      .markdown-header {
+        background: rgba(30, 30, 30, 0.98);
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+
+        .icon {
+          color: #999;
+        }
+
+        .filename {
+          color: #fff;
+        }
+      }
+
+      .markdown-content {
+        color: #fff;
+      }
+    }
   }
 }
 
@@ -1413,4 +1534,4 @@ onUnmounted(() => {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-</style> 
+</style>

@@ -35,7 +35,7 @@ const isDark = useDark()
 const aiApps = ref([
   {
     id: 1,
-    title: 'AI 聊天',
+    title: 'AI 智能体',
     description: '多模态对话机器人，支持图片、音频等',
     route: '/ai/ai-chat',
     icon: ChatBubbleLeftRightIcon

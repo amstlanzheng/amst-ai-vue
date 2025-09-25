@@ -17,7 +17,7 @@ import {
 import { NAvatar, NText } from "naive-ui";
 
 import { NIcon } from "naive-ui";
-import { defineComponent, h, computed } from "vue";
+import { defineComponent, h, computed, watch, ref } from "vue";
 import { useRouter } from "vue-router";
 import { userCurrent, userLogout } from "@/services/user";
 
@@ -69,25 +69,10 @@ export default defineComponent({
     const loginUserStores = useLoginUserStore();
 
     const router = useRouter();
-    const handleSelect = (key: string) => {
-      console.log(key);
-      if (key === "logout") {
-        userLogout();
-        useLoginUser.getLoginUser();
-        console.log(loginUserStores.loginUser);
-        router.push({
-          path: "/",
-        });
-        return;
-      }
-      router.push({
-        path: key,
-      });
-    };
     const useLoginUser = useLoginUserStore();
     useLoginUser.getLoginUser();
-
-    const options = computed(() => [
+    
+    const options = ref([
       {
         key: "header",
         type: "render",
@@ -104,18 +89,21 @@ export default defineComponent({
         key: "/user/login",
         icon: renderIcon(LoginIcon),
         title: "用户登录",
+        show: !useLoginUser.loginUser.isLogin
       },
       {
         label: "用户注册",
         key: "/user/register",
         icon: renderIcon(UserIcon),
         title: "用户注册",
+        show: !useLoginUser.loginUser.isLogin
       },
       {
         label: "用户管理",
         key: "/admin/manage",
         icon: renderIcon(ManageIcon),
         title: "用户管理",
+        show: useLoginUser.loginUser.isLogin && useLoginUser.loginUser.userRole === "1"
       },
       {
         label: "退出登录",
@@ -125,6 +113,68 @@ export default defineComponent({
         disabled: !useLoginUser.loginUser.isLogin,
       },
     ]);
+
+    // 监听用户状态变化
+    watch(() => useLoginUser.loginUser, (newUser) => {
+      // 强制更新选项
+      options.value = [
+        {
+          key: "header",
+          type: "render",
+          render: () => renderCustomHeader(useLoginUser),
+        },
+        {
+          label: "主页",
+          key: "/",
+          icon: renderIcon(EditIcon),
+          title: "主页",
+        },
+        {
+          label: "用户登录",
+          key: "/user/login",
+          icon: renderIcon(LoginIcon),
+          title: "用户登录",
+          show: !newUser.isLogin
+        },
+        {
+          label: "用户注册",
+          key: "/user/register",
+          icon: renderIcon(UserIcon),
+          title: "用户注册",
+          show: !newUser.isLogin
+        },
+        {
+          label: "用户管理",
+          key: "/admin/manage",
+          icon: renderIcon(ManageIcon),
+          title: "用户管理",
+          show: newUser.isLogin && newUser.userRole === "1"
+        },
+        {
+          label: "退出登录",
+          key: "logout",
+          icon: renderIcon(LogoutIcon),
+          title: "退出登录",
+          disabled: !newUser.isLogin,
+        },
+      ];
+    }, { deep: true });
+
+    const handleSelect = async (key: string) => {
+      console.log(key);
+      if (key === "logout") {
+        await userLogout();
+        await useLoginUser.getLoginUser();
+        console.log(loginUserStores.loginUser);
+        router.push({
+          path: "/",
+        });
+        return;
+      }
+      router.push({
+        path: key,
+      });
+    };
 
     return {
       loginUserStores,

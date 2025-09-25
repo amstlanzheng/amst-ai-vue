@@ -1,5 +1,5 @@
-// const BASE_URL = 'http://localhost:8080'
-const BASE_URL = 'https://ai.lanzhs.cn'
+const BASE_URL = 'http://localhost:8080'
+// const BASE_URL = 'https://ai.lanzhs.cn'
 export const chatAPI = {
   // 发送聊天消息
   async sendMessage(data, chatId) {
@@ -143,9 +143,9 @@ export const chatAPI = {
   },
 
   // 发送 PDF 问答消息
-  async sendPdfMessage(prompt, chatId) {
+  async sendMdMessage(prompt, chatId) {
     try {
-      const url = new URL(`${BASE_URL}/ai/pdf/chat`)
+      const url = new URL(`${BASE_URL}/ai/md/chat`)
       url.searchParams.append('prompt', prompt)
       if (chatId) {
         url.searchParams.append('chatId', chatId)
