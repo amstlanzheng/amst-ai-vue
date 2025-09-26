@@ -2,13 +2,25 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { currentUser } from "@/services/user";
 
+interface LoginUser {
+  username: string;
+  isLogin: boolean;
+  userRole?: string;
+  id?: string;
+  userAccount?: string;
+  avatarUrl?: string;
+  gender?: string;
+  phone?: string;
+  email?: string;
+  planetCode?: string;
+  createTime?: string;
+}
+
 export const useLoginUserStore = defineStore("loginUser", () => {
-  const loginUser = ref<any>(
-    {
-      username: "无名",
-      isLogin: false,
-    }
-);
+  const loginUser = ref<LoginUser>({
+    username: "无名",
+    isLogin: false,
+  });
 
   async function getLoginUser() {
 
@@ -27,7 +39,7 @@ export const useLoginUserStore = defineStore("loginUser", () => {
     }
   }
 
-  async function setLoginUser(new_param: any) {
+  async function setLoginUser(new_param: LoginUser) {
     loginUser.value = new_param;
   }
 

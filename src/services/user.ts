@@ -1,7 +1,31 @@
 import myAxios from "@/request";
 
+interface UserRegisterParams {
+  userAccount: string;
+  userPassword: string;
+  checkPassword: string;
+  planetCode: string;
+}
 
-export const userRegister = async (param : any) => {
+interface UserLoginParams {
+  userAccount: string;
+  userPassword: string;
+}
+
+interface UserUpdateParams {
+  id: string;
+  username?: string;
+  userAccount?: string;
+  userPassword?: string;
+  checkPassword?: string;
+  phone?: string;
+  email?: string;
+  planetCode?: string;
+  gender?: string;
+  userRole?: string;
+}
+
+export const userRegister = async (param: UserRegisterParams) => {
 
     return await myAxios.request({
             url: '/api/user/register',
@@ -13,7 +37,7 @@ export const userRegister = async (param : any) => {
 }
 
 
-export const userLogin = async (param : any) => {
+export const userLogin = async (param: UserLoginParams) => {
 
     return await myAxios.request({
             url: '/api/user/login',
@@ -53,7 +77,7 @@ export const userLogout = async () => {
 }
 
 
-export const searchUser = async (username: any) => {
+export const searchUser = async (username: string) => {
 
     return await myAxios.request({
             url: '/api/user/search',
@@ -64,7 +88,7 @@ export const searchUser = async (username: any) => {
 
 }
 
-export const deleteUser = async (id: any) => {
+export const deleteUser = async (id: string) => {
 
     return await myAxios.request({
             url: '/api/user/deleteUser',
@@ -77,7 +101,7 @@ export const deleteUser = async (id: any) => {
 }
 
 
-export const userUpdate = async (param : any) => {
+export const userUpdate = async (param: UserUpdateParams) => {
 
     return await myAxios.request({
             url: '/api/user/update',

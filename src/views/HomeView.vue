@@ -7,30 +7,27 @@
     
 
     <div class="features-header">
-          <div class="welcome-text">
-      <p>{{ speak }}</p>
-    </div>
-    <div class="budget-meter">
-      <div class="meter-header">
-        <span>当前资源使用情况</span>
-        <span>35% 已使用</span>
+      <div class="welcome-text">
+        <p>{{ speak }}</p>
       </div>
-      <div class="meter-bar">
-        <div class="meter-fill"></div>
+      <div class="budget-meter">
+        <div class="meter-header">
+          <span>当前资源使用情况</span>
+          <span>35% 已使用</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill"></div>
+        </div>
+      </div>
+      
+      <div class="features" @click="openModal()">
+        <div class="feature">
+          <i class="fas fa-robot"></i>
+          <h3>开始使用</h3>
+          <p>与AI助手进行自然流畅的对话，获取信息与帮助</p>
+        </div>
       </div>
     </div>
-    
-    <div class="features" @click="openModal()">
-      <div class="feature">
-        <i class="fas fa-robot"></i>
-        <h3>开始使用</h3>
-        <p>与AI助手进行自然流畅的对话，获取信息与帮助</p>
-      </div>
-    </div>
-    </div>
-
-    
-
   </div>
 </template>
 
@@ -50,12 +47,10 @@ const openModal = () => {
 #homeView {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
-
   padding: 40px;
-  width: 1200px;
-
+  max-width: 1200px;
+  width: 100%;
   text-align: center;
-
   margin: 0 auto;
 }
 
@@ -205,7 +200,7 @@ h1 {
   animation: move 1s linear infinite;
 }
 .features-header{
-  width: 100vh;
+  width: 100%;
   margin: 0 auto;
   text-align: center;
 }
@@ -236,4 +231,5 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
 </style>

@@ -63,12 +63,12 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { userRegister } from "@/services/user";
 import { useLoginUserStore } from "@/stores/useLoginUserStore";
-import type { FormInst, FormItemInst, FormItemRule, FormRules } from "naive-ui";
+import type { FormInst, FormItemRule, FormRules } from "naive-ui";
 import { useMessage } from "naive-ui";
-import { defineComponent, ref } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 interface ModelType {
@@ -78,109 +78,99 @@ interface ModelType {
   planetCode: string | null;
 }
 
-export default defineComponent({
-  setup() {
-    const formRef = ref<FormInst | null>(null);
-    const message = useMessage();
-    const modelRef = ref<ModelType>({
-      userAccount: null,
-      userPassword: null,
-      checkPassword: null,
-      planetCode: null,
-    });
-
-    function validatePasswordStartWith(
-      rule: FormItemRule,
-      value: string
-    ): boolean {
-      return (
-        !!modelRef.value.userPassword &&
-        modelRef.value.userPassword.startsWith(value) &&
-        modelRef.value.userPassword.length >= value.length
-      );
-    }
-
-    function validatePasswordSame(rule: FormItemRule, value: string): boolean {
-      return value === modelRef.value.userPassword;
-    }
-    const router = useRouter();
-
-    function handleLoginButtonClick() {
-      router.push({
-        path: "/user/login",
-        replace: true,
-      });
-    }
-
-
-
-
-    const rules: FormRules = {
-      userAccount: [
-        {
-          required: true,
-          message: "请输入账号",
-          trigger: ["input"],
-        },
-      ],
-      userPassword: [
-        {
-          required: true,
-          message: "请输入密码",
-          trigger: ["input"],
-        },
-      ],
-      checkPassword: [
-        {
-          required: true,
-          message: "请再次输入密码",
-          trigger: ["input", "blur"],
-        },
-        {
-          validator: validatePasswordStartWith,
-          message: "两次密码输入不一致",
-          trigger: "input",
-        },
-        {
-          validator: validatePasswordSame,
-          message: "两次密码输入不一致",
-          trigger: ["blur", "password-input"],
-        },
-      ],
-      planetCode: [
-        {
-          required: true,
-          message: "请输入邀请码",
-          trigger: ["input"],
-        },
-      ],
-    };
-    const useLoginUser = useLoginUserStore();
-
-    const handleValidateButtonClick = async () => {
-      const res = await userRegister(modelRef.value);
-      console.log(res);
-      if (res.data.code === 1) {
-        await useLoginUser.getLoginUser();
-        message.success("注册成功");
-        router.push({
-          path: "/user/login",
-          replace: true,
-        });
-      } else {
-        message.error("注册失败：" + res.data.description);
-      }
-    };
-
-    return {
-      formRef,
-      model: modelRef,
-      rules,
-      handleValidateButtonClick,
-      handleLoginButtonClick
-    };
-  },
+const formRef = ref<FormInst | null>(null);
+const message = useMessage();
+const modelRef = ref<ModelType>({
+  userAccount: null,
+  userPassword: null,
+  checkPassword: null,
+  planetCode: null,
 });
+
+function validatePasswordStartWith(
+  rule: FormItemRule,
+  value: string
+): boolean {
+  return (
+    !!modelRef.value.userPassword &&
+    modelRef.value.userPassword.startsWith(value) &&
+    modelRef.value.userPassword.length >= value.length
+  );
+}
+
+function validatePasswordSame(rule: FormItemRule, value: string): boolean {
+  return value === modelRef.value.userPassword;
+}
+
+const router = useRouter();
+
+function handleLoginButtonClick() {
+  router.push({
+    path: "/user/login",
+    replace: true,
+  });
+}
+
+
+
+
+const rules: FormRules = {
+  userAccount: [
+    {
+      required: true,
+      message: "请输入账号",
+      trigger: ["input"],
+    },
+  ],
+  userPassword: [
+    {
+      required: true,
+      message: "请输入密码",
+      trigger: ["input"],
+    },
+  ],
+  checkPassword: [
+    {
+      required: true,
+      message: "请再次输入密码",
+      trigger: ["input", "blur"],
+    },
+    {
+      validator: validatePasswordStartWith,
+      message: "两次密码输入不一致",
+      trigger: "input",
+    },
+    {
+      validator: validatePasswordSame,
+      message: "两次密码输入不一致",
+      trigger: ["blur", "password-input"],
+    },
+  ],
+  planetCode: [
+    {
+      required: true,
+      message: "请输入邀请码",
+      trigger: ["input"],
+    },
+  ],
+};
+
+const useLoginUser = useLoginUserStore();
+
+const handleValidateButtonClick = async () => {
+  const res = await userRegister(modelRef.value);
+  console.log(res);
+  if (res.data.code === 1) {
+    await useLoginUser.getLoginUser();
+    message.success("注册成功");
+    router.push({
+      path: "/user/login",
+      replace: true,
+    });
+  } else {
+    message.error("注册失败：" + res.data.description);
+  }
+};
 </script>
 
 <style scoped>

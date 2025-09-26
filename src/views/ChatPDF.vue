@@ -1,5 +1,5 @@
 <template>
-  <div class="chat-pdf" :class="{ 'dark': isDark }">
+  <div class="chat-pdf">
     <div class="chat-container">
       <!-- 左侧边栏 -->
       <div class="sidebar">
@@ -126,9 +126,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, nextTick, watch, onUnmounted, computed } from 'vue'
-import { useDark } from '@vueuse/core'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { 
@@ -144,7 +143,6 @@ import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 import { useRouter } from 'vue-router'
 
-const isDark = useDark()
 const router = useRouter()
 const messagesRef = ref(null)
 const inputRef = ref(null)
@@ -157,7 +155,9 @@ const chatHistory = ref([])
 const currentMdName = ref('')
 const currentMdContent = ref('')
 const isDragging = ref(false)
-const BASE_URL = 'http://localhost:8080'
+import API_CONFIG from '../config/api.ts'
+
+const BASE_URL = API_CONFIG.baseURL
 
 // 配置 marked
 marked.setOptions({
@@ -631,7 +631,7 @@ onUnmounted(() => {
 
 <style scoped lang="scss">
 .chat-pdf {
-  position: fixed;
+  position: absolute;
   top: 64px;
   left: 0;
   right: 0;
@@ -896,7 +896,7 @@ onUnmounted(() => {
   }
 }
 
-.dark {
+.dark .chat-pdf {
   .sidebar {
     background: rgba(40, 40, 40, 0.95);
 
@@ -1517,6 +1517,7 @@ onUnmounted(() => {
   .chat-pdf {
     .chat-container {
       padding: 0;
+      margin-top: 0; /* 重置顶部边距 */
     }
     
     .sidebar {

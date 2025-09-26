@@ -1,5 +1,5 @@
 <template>
-  <div class="home" :class="{ 'dark': isDark }">
+  <div class="home">
     <div class="container">
       <h1 class="title">AM AI 应用中心</h1>
       <div class="cards-grid">
@@ -20,17 +20,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
-import { useDark } from '@vueuse/core'
 import { 
   ChatBubbleLeftRightIcon,
   HeartIcon,
   UserGroupIcon,
   DocumentTextIcon
 } from '@heroicons/vue/24/outline'
-
-const isDark = useDark()
 
 const aiApps = ref([
   {
@@ -57,7 +54,7 @@ const aiApps = ref([
   },
   {
     id: 4,
-    title: 'ChatPDF',
+    title: 'ChatMD',
     description: '打造你的个人知识库，与知识库自由对话',
     route: '/ai/chat-pdf',
     icon: DocumentTextIcon
@@ -166,7 +163,7 @@ const aiApps = ref([
     }
   }
 
-  &.dark {
+  .dark & {
     background: #1a1a1a;
     
     .card {

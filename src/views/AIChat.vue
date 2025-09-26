@@ -1,5 +1,5 @@
 <template>
-  <div class="ai-chat" :class="{ 'dark': isDark }">
+  <div class="ai-chat">
     <div class="chat-container">
       <div class="sidebar">
         <div class="history-header">
@@ -87,9 +87,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { useDark } from '@vueuse/core'
 import { 
   ChatBubbleLeftRightIcon, 
   PaperAirplaneIcon,
@@ -101,7 +100,6 @@ import {
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 
-const isDark = useDark()
 const messagesRef = ref(null)
 const inputRef = ref(null)
 const userInput = ref('')
@@ -697,7 +695,7 @@ onMounted(() => {
   }
 }
 
-.dark {
+.dark .ai-chat {
   .sidebar {
     background: rgba(40, 40, 40, 0.95);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);

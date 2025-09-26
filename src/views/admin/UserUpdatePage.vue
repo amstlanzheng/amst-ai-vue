@@ -68,58 +68,58 @@
   </n-form>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { userUpdate } from "@/services/user";
 import type { FormInst, FormRules } from "naive-ui";
 import { useMessage } from "naive-ui";
-import { defineComponent, ref, watch } from "vue";
+import { ref, watch } from "vue";
 
-export default defineComponent({
-  props: {
-    userData: {
-      type: Object,
-      default: null,
-    },
+interface Props {
+  userData: any;
+}
+
+const props = defineProps<Props>();
+const emit = defineEmits<{
+  updateSuccess: [];
+  cancel: [];
+}>();
+const formRef = ref<FormInst | null>(null);
+const message = useMessage();
+const model = ref({
+  id: null,
+  username: null,
+  userAccount: null,
+  userPassword: null,
+  checkPassword: null,
+  phone: null,
+  email: null,
+  planetCode: null,
+  gender: null,
+  userRole: null,
+});
+
+// 监听userData的变化，当有数据传入时更新表单
+watch(
+  () => props.userData,
+  (newUserData) => {
+    console.log("newUserData:", newUserData);
+    if (newUserData) {
+      model.value = {
+        id: newUserData.id || null,
+        username: newUserData.username || null,
+        userAccount: newUserData.userAccount || null,
+        userPassword: null, // 密码通常不从现有数据中获取
+        checkPassword: null,
+        phone: newUserData.phone || null,
+        email: newUserData.email || null,
+        planetCode: newUserData.planetCode || null,
+        gender: newUserData.gender || null,
+        userRole: newUserData.userRole || null,
+      };
+    }
   },
-
-  setup(props, { emit }) {
-    const formRef = ref<FormInst | null>(null);
-    const message = useMessage();
-    const model = ref({
-      id: null,
-      username: null,
-      userAccount: null,
-      userPassword: null,
-      checkPassword: null,
-      phone: null,
-      email: null,
-      planetCode: null,
-      gender: null,
-      userRole: null,
-    });
-
-    // 监听userData的变化，当有数据传入时更新表单
-    watch(
-      () => props.userData,
-      (newUserData) => {
-        console.log("newUserData:", newUserData);
-        if (newUserData) {
-          model.value = {
-            id: newUserData.id || null,
-            username: newUserData.username || null,
-            userAccount: newUserData.userAccount || null,
-            userPassword: null, // 密码通常不从现有数据中获取
-            checkPassword: null,
-            phone: newUserData.phone || null,
-            email: newUserData.email || null,
-            planetCode: newUserData.planetCode || null,
-            gender: newUserData.gender || null,
-            userRole: newUserData.userRole || null,
-          };
-        }
-      },
-      { immediate: true }
-    );
+  { immediate: true }
+);
 
     const rules: FormRules = {
       username: [
@@ -149,24 +149,16 @@ export default defineComponent({
       // 发送事件通知父组件关闭模态框
       emit("cancel");
     };
-    return {
-      rules,
-      formRef,
-      size: ref("medium"),
-      model,
-      handleCancel,
+const size = ref("medium");
 
-      handleValidateButtonClick() {
-        userUpdate(model.value).then((res) => {
-          if (res.data.code === 1) {
-            message.success("更新成功");
-            emit("update-success");
-          } else {
-            message.error(res.data.description);
-          }
-        });
-      },
-    };
-  },
-});
+const handleValidateButtonClick = () => {
+  userUpdate(model.value).then((res) => {
+    if (res.data.code === 1) {
+      message.success("更新成功");
+      emit("update-success");
+    } else {
+      message.error(res.data.description);
+    }
+  });
+};
 </script>

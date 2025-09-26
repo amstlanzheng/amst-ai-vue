@@ -40,13 +40,11 @@
   </div>
 </template>
 
-<script lang="ts">
-import { searchUser } from "@/services/user";
-import type { DataTableColumns } from "naive-ui";
+<script setup lang="ts">
+import { searchUser, deleteUser } from "@/services/user";
+import type { DataTableColumns, InputInst } from "naive-ui";
 import { NButton, useMessage, NImage, useDialog } from "naive-ui";
-import { defineComponent, h, ref, onMounted } from "vue";
-import { deleteUser } from "@/services/user";
-import type { InputInst } from "naive-ui";
+import { h, ref, onMounted } from "vue";
 import UserUpdatePage from "./UserUpdatePage.vue";
 interface User {
   id: string;
@@ -172,90 +170,77 @@ function createColumns({
   ];
 }
 
-export default defineComponent({
-    components: {
-    UserUpdatePage
-  },
-  setup() {
-        // 添加一个变量来存储当前选中的用户
-    const currentUser = ref<User | null>(null);
-    const showModal = ref(false);
-    const inputInstRef = ref<InputInst | null>(null);
-    const inputValue = ref("");
-    // 在组件挂载时执行获取用户列表
-    onMounted(() => {
-      getUserList();
-    });
-    const message = useMessage();
-    const dialog = useDialog();
-    const data = ref([]);
-    const getUserList = async (username = "") => {
-      console.log("getUserList----->");
-      const res = await searchUser(username);
-      if (res.data.code === 1) {
-        data.value = res.data.data;
-      } else {
-        message.error("查询失败：" + res.data.description);
-      }
-    };
-    // 处理更新成功的回调
-    const handleUpdateSuccess = () => {
-      // 关闭模态框
-      showModal.value = false;
-      // 重新加载用户列表
-      getUserList();
-      // 显示成功消息
-      message.success("用户信息更新成功");
-    };
+// 添加一个变量来存储当前选中的用户
+const currentUser = ref<User | null>(null);
+const showModal = ref(false);
+const inputInstRef = ref<InputInst | null>(null);
+const inputValue = ref("");
+const message = useMessage();
+const dialog = useDialog();
+const data = ref([]);
+
+// 在组件挂载时执行获取用户列表
+onMounted(() => {
+  getUserList();
+});
+const getUserList = async (username = "") => {
+  console.log("getUserList----->");
+  const res = await searchUser(username);
+  if (res.data.code === 1) {
+    data.value = res.data.data;
+  } else {
+    message.error("查询失败：" + res.data.description);
+  }
+};
+
+// 处理更新成功的回调
+const handleUpdateSuccess = () => {
+  // 关闭模态框
+  showModal.value = false;
+  // 重新加载用户列表
+  getUserList();
+  // 显示成功消息
+  message.success("用户信息更新成功");
+};
 
 
-    return {
-      showModal,
-      currentUser,
-      inputInstRef,
-      inputValue,
-      data,
-      handleUpdateSuccess,
-      columns: createColumns({
-        deleteUserById(row: User) {
+const columns = createColumns({
+  deleteUserById(row: User) {
+    deleteUser(row.id).then((res) => {
+      dialog.warning({
+        title: "确认删除",
+        content: `您确定要删除用户 "${row.username}" 吗？此操作无法撤销。`,
+        positiveText: "确定",
+        negativeText: "取消",
+        onPositiveClick: () => {
           deleteUser(row.id).then((res) => {
-            dialog.warning({
-              title: "确认删除",
-              content: `您确定要删除用户 "${row.username}" 吗？此操作无法撤销。`,
-              positiveText: "确定",
-              negativeText: "取消",
-              onPositiveClick: () => {
-                deleteUser(row.id).then((res) => {
-                  if (res.data.code === 1) {
-                    message.success("删除成功");
-                    getUserList();
-                  } else {
-                    message.error("删除失败：" + res.data.description);
-                  }
-                });
-              },
-              onNegativeClick: () => {
-                message.info("已取消删除");
-              },
-            });
+            if (res.data.code === 1) {
+              message.success("删除成功");
+              getUserList();
+            } else {
+              message.error("删除失败：" + res.data.description);
+            }
           });
         },
-
-        updateUserById(row: User) {
-          // 设置当前用户数据并显示模态框
-          currentUser.value = row;
-          showModal.value = true;
+        onNegativeClick: () => {
+          message.info("已取消删除");
         },
-      }),
+      });
+    });
+  },
 
-      handleSearchButtonClick() {
-        getUserList(inputValue.value);
-      },
-
-      pagination: false as const,
-    };
+  updateUserById(row: User) {
+    // 设置当前用户数据并显示模态框
+    currentUser.value = row;
+    showModal.value = true;
   },
 });
+
+const handleSearchButtonClick = () => {
+  getUserList(inputValue.value);
+};
+
+const pagination = false as const;
 </script>
 
 <style scoped>

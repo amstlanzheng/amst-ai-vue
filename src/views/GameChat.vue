@@ -1,5 +1,5 @@
 <template>
-  <div class="game-chat" :class="{ 'dark': isDark }">
+  <div class="game-chat">
     <div class="game-container">
       <!-- 游戏开始界面 -->
       <div v-if="!isGameStarted" class="game-start">
@@ -83,14 +83,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue'
-import { useDark } from '@vueuse/core'
 import { PaperAirplaneIcon, HeartIcon } from '@heroicons/vue/24/outline'
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 
-const isDark = useDark()
 const messagesRef = ref(null)
 const inputRef = ref(null)
 const userInput = ref('')
@@ -153,7 +151,7 @@ const resetGame = () => {
 }
 
 // 发送消息
-const sendMessage = async (content) => {
+const sendMessage = async (content?: string) => {
   if (isStreaming.value || (!content && !userInput.value.trim())) return
   
   // 使用传入的 content 或用户输入框的内容
@@ -540,7 +538,7 @@ onMounted(() => {
   }
 }
 
-.dark {
+.dark .game-chat {
   .game-start {
     .input-area {
       textarea {

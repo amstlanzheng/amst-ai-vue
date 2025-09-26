@@ -1,8 +1,9 @@
 import axios from 'axios'
 
+import API_CONFIG from './config/api.ts'
+
 const myAxios = axios.create({
-  baseURL: 'http://localhost:8080',
-  // baseURL: 'https://ai.lanzhs.cn',
+  baseURL: API_CONFIG.baseURL,
   timeout: 10000,
   withCredentials: true
 });

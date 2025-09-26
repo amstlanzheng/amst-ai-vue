@@ -47,95 +47,82 @@
   </div>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { userLogin } from "@/services/user";
 import { useLoginUserStore } from "@/stores/useLoginUserStore";
 import type { FormInst, FormRules } from "naive-ui";
 import { useMessage } from "naive-ui";
-import { defineComponent, ref } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
-
-
 
 interface ModelType {
   userAccount: string | null;
   userPassword: string | null;
 }
 
-export default defineComponent({
-  setup() {
-    const formRef = ref<FormInst | null>(null);
-    const message = useMessage();
-    const modelRef = ref<ModelType>({
-      userAccount: null,
-      userPassword: null,
-    });
+const formRef = ref<FormInst | null>(null);
+const message = useMessage();
+const modelRef = ref<ModelType>({
+  userAccount: null,
+  userPassword: null,
+});
+
 const router = useRouter();
 
+const handleRegisterButtonClick = () => {
+  router.push({ 
+    path: "/user/register" ,
+    replace: true
+  });
+}
 
-    const handleRegisterButtonClick = () => {
-      router.push({ 
-        path: "/user/register" ,
-        replace: true
-      });
-    }
+const rules: FormRules = {
+  userAccount: [
+    {
+      required: true,
+      message: "请输入账号",
+      trigger: ["input"],
+    },
+    {
+      min: 4,
+      max: 20,
+      message: "请输入4-20位账号",
+      trigger: ["input"],
+    },
+  ],
+  userPassword: [
+    {
+      required: true,
+      message: "请输入密码",
+      trigger: ["input"],
+    },
+    {
+      min: 6,
+      max: 20,
+      message: "请输入6-20位密码",
+      trigger: ["input"],
+    },
+  ],
+};
 
-    const rules: FormRules = {
-      userAccount: [
-        {
-          required: true,
-          message: "请输入账号",
-          trigger: ["input"],
-        },
-        {
-          min: 4,
-          max: 20,
-          message: "请输入4-20位账号",
-          trigger: ["input"],
-        },
-      ],
-      userPassword: [
-        {
-          required: true,
-          message: "请输入密码",
-          trigger: ["input"],
-        },
-        {
-          min: 6,
-          max: 20,
-          message: "请输入6-20位密码",
-          trigger: ["input"],
-        },
+const useLoginUser = useLoginUserStore();
 
-      ],
-    };
-    const useLoginUser = useLoginUserStore()
-
-    const handleValidateButtonClick = async() => {
-      const res = await userLogin(modelRef.value);
-      console.log(res);
-      if (res.data.code === 1) {
-        await useLoginUser.getLoginUser();
-        message.success("登录成功");
-        router.push({ 
-          path: "/home" ,
-          replace: true
-        });
-      } else {
-        message.error("登录失败：" + res.data.description);
-      }
-    }
+const handleValidateButtonClick = async() => {
+  const res = await userLogin(modelRef.value);
+  console.log(res);
+  if (res.data.code === 1) {
+    await useLoginUser.getLoginUser();
+    message.success("登录成功");
+    router.push({ 
+      path: "/home" ,
+      replace: true
+    });
+  } else {
+    message.error("登录失败：" + res.data.description);
+  }
+}
 
 
-    return {
-      formRef,
-      model: modelRef,
-      rules,
-      handleValidateButtonClick,
-      handleRegisterButtonClick
-    };
-  },
-});
 </script>
 
 <style scoped>

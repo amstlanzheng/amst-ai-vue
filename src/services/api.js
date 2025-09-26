@@ -1,5 +1,6 @@
-const BASE_URL = 'http://localhost:8080'
-// const BASE_URL = 'https://ai.lanzhs.cn'
+import API_CONFIG from '../config/api.ts'
+
+const BASE_URL = API_CONFIG.baseURL
 export const chatAPI = {
   // 发送聊天消息
   async sendMessage(data, chatId) {

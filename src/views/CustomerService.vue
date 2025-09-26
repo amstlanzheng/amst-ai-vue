@@ -1,5 +1,5 @@
 <template>
-  <div class="customer-service" :class="{ 'dark': isDark }">
+  <div class="customer-service">
     <div class="chat-container">
       <div class="sidebar">
         <div class="history-header">
@@ -73,9 +73,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import { useDark } from '@vueuse/core'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { 
@@ -87,7 +86,6 @@ import {
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 
-const isDark = useDark()
 const messagesRef = ref(null)
 const inputRef = ref(null)
 const userInput = ref('')
@@ -532,7 +530,7 @@ onMounted(() => {
   }
 }
 
-.dark {
+.dark .customer-service {
   .sidebar {
     background: rgba(40, 40, 40, 0.95);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);

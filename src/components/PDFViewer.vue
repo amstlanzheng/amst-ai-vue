@@ -14,7 +14,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { DocumentTextIcon } from '@heroicons/vue/24/outline'
 import { useDark } from '@vueuse/core'

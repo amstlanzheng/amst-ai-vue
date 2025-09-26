@@ -9,6 +9,7 @@ import Home from '@/views/Home.vue'
 import UserLoginPage from '@/views/user/UserLoginPage.vue'
 import UserRegisterPage from '@/views/user/UserRegisterPage.vue'
 import UserManangePage from '@/views/admin/UserManangePage.vue'
+import NavbarDemo from '@/views/NavbarDemo.vue'
 
 const routes: Array<RouteRecordRaw> = [
 
@@ -61,6 +62,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/admin/manage',
     name: 'currentUser',
     component: UserManangePage
+  },
+  {
+    path: '/demo/navbar',
+    name: 'NavbarDemo',
+    component: NavbarDemo
   },
 ]
 const router = createRouter({
