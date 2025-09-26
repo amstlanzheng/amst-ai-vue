@@ -52,6 +52,20 @@ marked.setOptions({
   gfm: true
 })
 
+// 扩展 marked 渲染器以使链接在新标签页中打开
+const renderer = new marked.Renderer()
+const originalLinkRenderer = renderer.link
+renderer.link = function(href, title, text) {
+  const localLink = originalLinkRenderer.call(this, href, title, text)
+  return localLink.replace('<a', '<a target="_blank" rel="noopener noreferrer"')
+}
+
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+  renderer: renderer
+})
+
 // 处理内容
 const processContent = (content: string) => {
   if (!content) return ''

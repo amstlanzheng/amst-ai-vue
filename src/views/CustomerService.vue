@@ -103,6 +103,21 @@ marked.setOptions({
   sanitize: false // 允许 HTML
 })
 
+// 扩展 marked 渲染器以使链接在新标签页中打开
+const renderer = new marked.Renderer()
+const originalLinkRenderer = renderer.link
+renderer.link = function(href, title, text) {
+  const localLink = originalLinkRenderer.call(this, href, title, text)
+  return localLink.replace('<a', '<a target="_blank" rel="noopener noreferrer"')
+}
+
+marked.setOptions({
+  breaks: true,  // 支持换行
+  gfm: true,     // 支持 GitHub Flavored Markdown
+  sanitize: false, // 允许 HTML
+  renderer: renderer
+})
+
 // 自动调整输入框高度
 const adjustTextareaHeight = () => {
   const textarea = inputRef.value
@@ -612,5 +627,4 @@ onMounted(() => {
       border-radius: 0;
     }
   }
-}
-</style> 
+}</style> 

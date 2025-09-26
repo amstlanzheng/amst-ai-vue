@@ -7,17 +7,17 @@
         </div>
         
         <n-card>
-          <n-form ref="formRef" :model="model" :rules="rules">
+          <n-form ref="formRef" :model="modelRef" :rules="rules">
             <n-form-item path="account" label="账号">
               <n-input 
-                v-model:value="model.userAccount" 
+                v-model:value="modelRef.userAccount" 
                 placeholder="请输入账号"
                 @keydown.enter.prevent
               />
             </n-form-item>
             <n-form-item path="password" label="密码">
               <n-input
-                v-model:value="model.userPassword"
+                v-model:value="modelRef.userPassword"
                 type="password"
                 placeholder="请输入密码"
                 @keydown.enter.prevent
@@ -56,15 +56,15 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 interface ModelType {
-  userAccount: string | null;
-  userPassword: string | null;
+  userAccount: string;
+  userPassword: string;
 }
 
 const formRef = ref<FormInst | null>(null);
 const message = useMessage();
 const modelRef = ref<ModelType>({
-  userAccount: null,
-  userPassword: null,
+  userAccount: "",
+  userPassword: "",
 });
 
 const router = useRouter();
