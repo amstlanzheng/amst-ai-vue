@@ -86,16 +86,16 @@ const emit = defineEmits<{
 const formRef = ref<FormInst | null>(null);
 const message = useMessage();
 const model = ref({
-  id: null,
-  username: null,
-  userAccount: null,
-  userPassword: null,
-  checkPassword: null,
-  phone: null,
-  email: null,
-  planetCode: null,
-  gender: null,
-  userRole: null,
+  id: "",
+  username: "",
+  userAccount: "",
+  userPassword: "",
+  checkPassword: "",
+  phone: "",
+  email: "",
+  planetCode: "",
+  gender: "",
+  userRole: "",
 });
 
 // 监听userData的变化，当有数据传入时更新表单
@@ -105,16 +105,16 @@ watch(
     console.log("newUserData:", newUserData);
     if (newUserData) {
       model.value = {
-        id: newUserData.id || null,
-        username: newUserData.username || null,
-        userAccount: newUserData.userAccount || null,
-        userPassword: null, // 密码通常不从现有数据中获取
-        checkPassword: null,
-        phone: newUserData.phone || null,
-        email: newUserData.email || null,
-        planetCode: newUserData.planetCode || null,
-        gender: newUserData.gender || null,
-        userRole: newUserData.userRole || null,
+        id: newUserData.id || "",
+        username: newUserData.username || "",
+        userAccount: newUserData.userAccount || "",
+        userPassword: "", // 密码通常不从现有数据中获取
+        checkPassword: "",
+        phone: newUserData.phone || "",
+        email: newUserData.email || "",
+        planetCode: newUserData.planetCode || "",
+        gender: newUserData.gender || "",
+        userRole: newUserData.userRole || "",
       };
     }
   },
@@ -155,7 +155,7 @@ const handleValidateButtonClick = () => {
   userUpdate(model.value).then((res) => {
     if (res.data.code === 1) {
       message.success("更新成功");
-      emit("update-success");
+      emit("updateSuccess");
     } else {
       message.error(res.data.description);
     }

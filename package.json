@@ -22,7 +22,7 @@
     "dompurify": "^3.2.4",
     "fs-extra": "^11.2.0",
     "highlight.js": "^11.11.1",
-    "marked": "^15.0.7",
+    "marked": "^4.3.0",
     "naive-ui": "^2.41.0",
     "pinia": "^3.0.3",
     "sass": "^1.85.1",

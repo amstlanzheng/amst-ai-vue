@@ -133,7 +133,7 @@ const handleValidateButtonClick = async() => {
   height: 70vh;
   width: 1200px;
   padding: 20px;
-  background-color: linear-gradient(to right, #fefefe, #fff) 
+  background-color: #f5f5f5;
 }
 
 .login-container {

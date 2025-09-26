@@ -84,17 +84,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, nextTick, computed, type Ref } from 'vue'
 import { PaperAirplaneIcon, HeartIcon } from '@heroicons/vue/24/outline'
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 
-const messagesRef = ref(null)
-const inputRef = ref(null)
+// Define types
+interface Message {
+  role: string
+  content: string
+  timestamp: Date
+}
+
+const messagesRef: Ref<HTMLElement | null> = ref(null)
+const inputRef: Ref<HTMLTextAreaElement | null> = ref(null)
 const userInput = ref('')
 const isStreaming = ref(false)
-const currentChatId = ref(null)
-const currentMessages = ref([])
+const currentChatId = ref<string | null>(null)
+const currentMessages = ref<Message[]>([])
 const angerReason = ref('')
 const isGameStarted = ref(false)
 const isGameOver = ref(false)
@@ -120,6 +127,18 @@ const scrollToBottom = async () => {
   }
 }
 
+// 重置游戏
+const resetGame = () => {
+  isGameStarted.value = false
+  isGameOver.value = false
+  gameResult.value = ''
+  currentMessages.value = []
+  angerReason.value = ''
+  userInput.value = ''
+  currentRound.value = 0
+  forgiveness.value = 0
+}
+
 // 开始游戏
 const startGame = async () => {
   isGameStarted.value = true
@@ -138,18 +157,6 @@ const startGame = async () => {
   await sendMessage(startPrompt)
 }
 
-// 重置游戏
-const resetGame = () => {
-  isGameStarted.value = false
-  isGameOver.value = false
-  gameResult.value = ''
-  currentMessages.value = []
-  angerReason.value = ''
-  userInput.value = ''
-  currentRound.value = 0
-  forgiveness.value = 0
-}
-
 // 发送消息
 const sendMessage = async (content?: string) => {
   if (isStreaming.value || (!content && !userInput.value.trim())) return
@@ -158,7 +165,7 @@ const sendMessage = async (content?: string) => {
   const messageContent = content || userInput.value.trim()
   
   // 添加用户消息
-  const userMessage = {
+  const userMessage: Message = {
     role: 'user',
     content: messageContent,
     timestamp: new Date()
@@ -174,7 +181,7 @@ const sendMessage = async (content?: string) => {
   await scrollToBottom()
   
   // 添加助手消息占位
-  const assistantMessage = {
+  const assistantMessage: Message = {
     role: 'assistant',
     content: '',
     timestamp: new Date()
@@ -186,7 +193,7 @@ const sendMessage = async (content?: string) => {
   
   try {
     // 确保使用正确的消息内容发送请求
-    const reader = await chatAPI.sendGameMessage(messageContent, currentChatId.value)
+    const reader = await chatAPI.sendGameMessage(messageContent, currentChatId.value || undefined)
     const decoder = new TextDecoder('utf-8')
     
     while (true) {
@@ -214,7 +221,7 @@ const sendMessage = async (content?: string) => {
 
         // 更新消息内容
         await nextTick(() => {
-          const updatedMessage = {
+          const updatedMessage: Message = {
             ...assistantMessage,
             content: accumulatedContent
           }
@@ -245,6 +252,12 @@ const sendMessage = async (content?: string) => {
   } catch (error) {
     console.error('发送消息失败:', error)
     assistantMessage.content = '抱歉，发生了错误，请稍后重试。'
+    const errorMessage: Message = {
+      ...assistantMessage,
+      content: '抱歉，发生了错误，请稍后重试。'
+    }
+    const lastIndex = currentMessages.value.length - 1
+    currentMessages.value.splice(lastIndex, 1, errorMessage)
   } finally {
     isStreaming.value = false
     await scrollToBottom()

@@ -28,12 +28,13 @@
 <script setup lang="ts">
 import { computed, onMounted, nextTick, ref, watch } from 'vue'
 import { marked } from 'marked'
+import type { Renderer } from 'marked'
 import DOMPurify from 'dompurify'
 import { UserCircleIcon, ComputerDesktopIcon, DocumentDuplicateIcon, CheckIcon } from '@heroicons/vue/24/outline'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github-dark.css'
 
-const contentRef = ref(null)
+const contentRef = ref<HTMLElement | null>(null)
 const copied = ref(false)
 const copyButtonTitle = computed(() => copied.value ? '已复制' : '复制内容')
 
@@ -46,23 +47,22 @@ const props = defineProps({
 
 const isUser = computed(() => props.message.role === 'user')
 
-// 配置 marked
-marked.setOptions({
-  breaks: true,
-  gfm: true
-})
-
 // 扩展 marked 渲染器以使链接在新标签页中打开
 const renderer = new marked.Renderer()
 const originalLinkRenderer = renderer.link
-renderer.link = function(href, title, text) {
-  const localLink = originalLinkRenderer.call(this, href, title, text)
-  return localLink.replace('<a', '<a target="_blank" rel="noopener noreferrer"')
+renderer.link = function(options: any) {
+  const link = originalLinkRenderer ? originalLinkRenderer.call(this, options) : marked.Renderer.prototype.link.call(this, options)
+  return link.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ')
 }
 
+// 配置 marked - 修复类型问题
 marked.setOptions({
   breaks: true,
   gfm: true,
+  highlight: function(code: string, lang: string) {
+    const language = hljs.getLanguage(lang) ? lang : 'plaintext'
+    return hljs.highlight(code, { language }).value
+  },
   renderer: renderer
 })
 
@@ -111,49 +111,11 @@ const processContent = (content: string) => {
 
   // 净化处理后的 HTML
   const cleanHtml = DOMPurify.sanitize(result, {
-    ADD_TAGS: ['think', 'code', 'pre', 'span'],
-    ADD_ATTR: ['class', 'language']
+    ADD_TAGS: ['think'],
+    ADD_ATTR: ['target', 'rel', 'class', 'language']
   })
   
-  // 在净化后的 HTML 中查找代码块并添加复制按钮
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = cleanHtml
-  
-  // 查找所有代码块
-  const preElements = tempDiv.querySelectorAll('pre')
-  preElements.forEach(pre => {
-    const code = pre.querySelector('code')
-    if (code) {
-      // 创建包装器
-      const wrapper = document.createElement('div')
-      wrapper.className = 'code-block-wrapper'
-      
-      // 添加复制按钮
-      const copyBtn = document.createElement('button')
-      copyBtn.className = 'code-copy-button'
-      copyBtn.title = '复制代码'
-      copyBtn.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="code-copy-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-        </svg>
-      `
-      
-      // 添加成功消息
-      const successMsg = document.createElement('div')
-      successMsg.className = 'copy-success-message'
-      successMsg.textContent = '已复制!'
-      
-      // 组装结构
-      wrapper.appendChild(copyBtn)
-      wrapper.appendChild(pre.cloneNode(true))
-      wrapper.appendChild(successMsg)
-      
-      // 替换原始的 pre 元素
-      pre.parentNode?.replaceChild(wrapper, pre)
-    }
-  })
-  
-  return tempDiv.innerHTML
+  return cleanHtml
 }
 
 // 修改计算属性
@@ -164,47 +126,69 @@ const processedContent = computed(() => {
 
 // 为代码块添加复制功能
 const setupCodeBlockCopyButtons = () => {
-  if (!contentRef.value) return;
+  if (!contentRef.value) return
   
-  const codeBlocks = (contentRef.value as HTMLElement).querySelectorAll('.code-block-wrapper');
+  const codeBlocks = contentRef.value.querySelectorAll('pre')
   codeBlocks.forEach((block: Element) => {
-    const copyButton = block.querySelector('.code-copy-button');
-    const codeElement = block.querySelector('code');
-    const successMessage = block.querySelector('.copy-success-message');
+    // 检查是否已经添加了复制按钮
+    if (block.querySelector('.code-copy-button')) return
     
-    if (copyButton && codeElement) {
-      // 移除旧的事件监听器
-      const newCopyButton = copyButton.cloneNode(true);
-      copyButton.parentNode?.replaceChild(newCopyButton, copyButton);
-      
-      // 添加新的事件监听器
-      newCopyButton.addEventListener('click', async (e: Event) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          const code = codeElement.textContent || '';
-          await navigator.clipboard.writeText(code);
-          
-          // 显示成功消息
-          if (successMessage) {
-            successMessage.classList.add('visible');
-            setTimeout(() => {
-              successMessage.classList.remove('visible');
-            }, 2000);
-          }
-        } catch (err) {
-          console.error('复制代码失败:', err);
-        }
-      });
-    }
-  });
+    const code = block.querySelector('code')
+    if (!code) return
+    
+    // 创建包装器
+    const wrapper = document.createElement('div')
+    wrapper.className = 'code-block-wrapper'
+    
+    // 添加复制按钮
+    const copyBtn = document.createElement('button')
+    copyBtn.className = 'code-copy-button'
+    copyBtn.title = '复制代码'
+    copyBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" class="code-copy-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+    `
+    
+    // 添加成功消息
+    const successMsg = document.createElement('div')
+    successMsg.className = 'copy-success-message'
+    successMsg.textContent = '已复制!'
+    
+    // 组装结构
+    wrapper.appendChild(block.cloneNode(true))
+    wrapper.appendChild(copyBtn)
+    wrapper.appendChild(successMsg)
+    
+    // 替换原始的 pre 元素
+    block.parentNode?.replaceChild(wrapper, block)
+    
+    // 添加事件监听器
+    copyBtn.addEventListener('click', async (e: Event) => {
+      e.preventDefault()
+      e.stopPropagation()
+      try {
+        const codeText = code.textContent || ''
+        await navigator.clipboard.writeText(codeText)
+        
+        // 显示成功消息
+        successMsg.classList.add('visible')
+        setTimeout(() => {
+          successMsg.classList.remove('visible')
+        }, 2000)
+      } catch (err) {
+        console.error('复制代码失败:', err)
+      }
+    })
+  })
 }
 
 // 在内容更新后手动应用高亮和设置复制按钮
 const highlightCode = async () => {
   await nextTick()
   if (contentRef.value) {
-    (contentRef.value as HTMLElement).querySelectorAll('pre code').forEach((block: Element) => {
+    // 高亮代码
+    contentRef.value.querySelectorAll('pre code').forEach((block: Element) => {
       hljs.highlightElement(block as HTMLElement)
     })
     
@@ -217,25 +201,22 @@ const highlightCode = async () => {
 const copyContent = async () => {
   try {
     // 获取纯文本内容
-    let textToCopy = props.message.content;
+    let textToCopy = props.message.content
     
     // 如果是AI回复，需要去除HTML标签
     if (!isUser.value && contentRef.value) {
-      // 创建临时元素来获取纯文本
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = processedContent.value;
-      textToCopy = tempDiv.textContent || tempDiv.innerText || '';
+      textToCopy = contentRef.value.textContent || contentRef.value.innerText || ''
     }
     
-    await navigator.clipboard.writeText(textToCopy);
-    copied.value = true;
+    await navigator.clipboard.writeText(textToCopy)
+    copied.value = true
     
     // 3秒后重置复制状态
     setTimeout(() => {
-      copied.value = false;
-    }, 3000);
+      copied.value = false
+    }, 3000)
   } catch (err) {
-    console.error('复制失败:', err);
+    console.error('复制失败:', err)
   }
 }
 

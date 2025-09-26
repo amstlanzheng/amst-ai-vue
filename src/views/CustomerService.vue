@@ -74,8 +74,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, type Ref } from 'vue'
 import { marked } from 'marked'
+import type { Renderer } from 'marked'
 import DOMPurify from 'dompurify'
 import { 
   ChatBubbleLeftRightIcon, 
@@ -86,13 +87,27 @@ import {
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 
-const messagesRef = ref(null)
-const inputRef = ref(null)
+// Define types
+interface ChatHistoryItem {
+  id: string
+  title: string
+}
+
+interface Message {
+  role: string
+  content: string
+  timestamp: Date
+  isMarkdown?: boolean
+}
+
+// Create type declarations for refs
+const messagesRef: Ref<HTMLElement | null> = ref(null)
+const inputRef: Ref<HTMLTextAreaElement | null> = ref(null)
 const userInput = ref('')
 const isStreaming = ref(false)
-const currentChatId = ref(null)
-const currentMessages = ref([])
-const chatHistory = ref([])
+const currentChatId = ref<string | null>(null)
+const currentMessages = ref<Message[]>([])
+const chatHistory = ref<ChatHistoryItem[]>([])
 const showBookingModal = ref(false)
 const bookingInfo = ref('')
 
@@ -100,23 +115,21 @@ const bookingInfo = ref('')
 marked.setOptions({
   breaks: true,  // 支持换行
   gfm: true,     // 支持 GitHub Flavored Markdown
-  sanitize: false // 允许 HTML
 })
 
 // 扩展 marked 渲染器以使链接在新标签页中打开
 const renderer = new marked.Renderer()
 const originalLinkRenderer = renderer.link
-renderer.link = function(href, title, text) {
-  const localLink = originalLinkRenderer.call(this, href, title, text)
-  return localLink.replace('<a', '<a target="_blank" rel="noopener noreferrer"')
+renderer.link = function(options: any) {
+  const html = originalLinkRenderer ? originalLinkRenderer.call(this, options) : marked.Renderer.prototype.link.call(this, options)
+  return html.replace(/^<a /, '<a target="_blank" rel="noopener noreferrer" ')
 }
 
 marked.setOptions({
   breaks: true,  // 支持换行
   gfm: true,     // 支持 GitHub Flavored Markdown
-  sanitize: false, // 允许 HTML
   renderer: renderer
-})
+} as any)
 
 // 自动调整输入框高度
 const adjustTextareaHeight = () => {
@@ -136,14 +149,14 @@ const scrollToBottom = async () => {
 }
 
 // 发送消息
-const sendMessage = async (content) => {
+const sendMessage = async (content?: string) => {
   if (isStreaming.value || (!content && !userInput.value.trim())) return
   
   // 使用传入的 content 或用户输入框的内容
   const messageContent = content || userInput.value.trim()
   
   // 添加用户消息
-  const userMessage = {
+  const userMessage: Message = {
     role: 'user',
     content: messageContent,
     timestamp: new Date()
@@ -158,7 +171,7 @@ const sendMessage = async (content) => {
   await scrollToBottom()
   
   // 添加助手消息占位
-  const assistantMessage = {
+  const assistantMessage: Message = {
     role: 'assistant',
     content: '',
     timestamp: new Date(),
@@ -170,7 +183,7 @@ const sendMessage = async (content) => {
   let accumulatedContent = ''
   
   try {
-    const reader = await chatAPI.sendServiceMessage(messageContent, currentChatId.value)
+    const reader = await chatAPI.sendServiceMessage(messageContent, currentChatId.value || undefined)
     const decoder = new TextDecoder('utf-8')
     
     while (true) {
@@ -183,7 +196,7 @@ const sendMessage = async (content) => {
         
         await nextTick(() => {
           // 更新消息
-          const updatedMessage = {
+          const updatedMessage: Message = {
             ...assistantMessage,
             content: accumulatedContent,
             isMarkdown: true  // 保持 Markdown 标记
@@ -203,8 +216,9 @@ const sendMessage = async (content) => {
       const bookingMatch = accumulatedContent.match(/【(.*?)】/s)
       if (bookingMatch) {
         // 使用 marked 处理预约信息中的 Markdown
+        const parsedContent = marked.parse(bookingMatch[1]) as string
         bookingInfo.value = DOMPurify.sanitize(
-          marked.parse(bookingMatch[1]),
+          parsedContent,
           {
             ADD_TAGS: ['code', 'pre', 'span'],
             ADD_ATTR: ['class', 'language']
@@ -223,11 +237,11 @@ const sendMessage = async (content) => {
 }
 
 // 加载特定对话
-const loadChat = async (chatId) => {
+const loadChat = async (chatId: string) => {
   currentChatId.value = chatId
   try {
     const messages = await chatAPI.getChatMessages(chatId, 'service')
-    currentMessages.value = messages.map(msg => ({
+    currentMessages.value = messages.map((msg: any) => ({
       ...msg,
       isMarkdown: msg.role === 'assistant'  // 为助手消息添加 Markdown 标记
     }))
@@ -261,7 +275,7 @@ const startNewChat = async () => {  // 添加 async
   currentMessages.value = []
   
   // 添加新对话到历史列表
-  const newChat = {
+  const newChat: ChatHistoryItem = {
     id: newChatId,
     title: `咨询 ${newChatId.slice(-6)}`
   }
@@ -627,4 +641,5 @@ onMounted(() => {
       border-radius: 0;
     }
   }
-}</style> 
+}
+</style>

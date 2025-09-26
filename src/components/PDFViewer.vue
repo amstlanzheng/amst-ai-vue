@@ -32,8 +32,8 @@ const props = defineProps({
 })
 
 const isLoading = ref(false)
-const viewerRef = ref(null)
-let instance = null
+const viewerRef = ref<HTMLDivElement | null>(null)
+let instance: { url?: string; iframe?: HTMLIFrameElement } | null = null
 
 // 使用简单的 PDF.js 实现
 onMounted(async () => {
@@ -52,8 +52,10 @@ onMounted(async () => {
       iframe.src = url
       
       // 清空容器并添加 iframe
-      viewerRef.value.innerHTML = ''
-      viewerRef.value.appendChild(iframe)
+      if (viewerRef.value) {
+        viewerRef.value.innerHTML = ''
+        viewerRef.value.appendChild(iframe)
+      }
       
       // 监听 iframe 加载完成
       iframe.onload = () => {
@@ -71,7 +73,7 @@ onMounted(async () => {
 })
 
 // 创建 iframe 并设置主题
-const createIframe = (file) => {
+const createIframe = (file: File) => {
   const iframe = document.createElement('iframe')
   iframe.style.width = '100%'
   iframe.style.height = '100%'
@@ -260,4 +262,5 @@ onUnmounted(() => {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-</style> 
+
+</style>

@@ -22,7 +22,7 @@
           <div class="navbar-actions">
             <button 
               v-if="showThemeToggle"
-              @click="toggleTheme" 
+              @click="() => toggleTheme()" 
               class="theme-toggle"
               :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
             >

@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, type Ref } from 'vue'
 import { 
   ChatBubbleLeftRightIcon, 
   PaperAirplaneIcon,
@@ -100,15 +100,27 @@ import {
 import ChatMessage from '../components/ChatMessage.vue'
 import { chatAPI } from '../services/api'
 
-const messagesRef = ref(null)
-const inputRef = ref(null)
+// Define types
+interface Message {
+  role: string
+  content: string
+  timestamp: Date
+}
+
+interface ChatHistoryItem {
+  id: string
+  title: string
+}
+
+const messagesRef: Ref<HTMLElement | null> = ref(null)
+const inputRef: Ref<HTMLTextAreaElement | null> = ref(null)
 const userInput = ref('')
 const isStreaming = ref(false)
-const currentChatId = ref(null)
-const currentMessages = ref([])
-const chatHistory = ref([])
-const fileInput = ref(null)
-const selectedFiles = ref([])
+const currentChatId = ref<string | null>(null)
+const currentMessages = ref<Message[]>([])
+const chatHistory = ref<ChatHistoryItem[]>([])
+const fileInput = ref<HTMLInputElement | null>(null)
+const selectedFiles = ref<File[]>([])
 
 // 自动调整输入框高度
 const adjustTextareaHeight = () => {
@@ -116,9 +128,9 @@ const adjustTextareaHeight = () => {
   if (textarea) {
     textarea.style.height = 'auto'
     textarea.style.height = textarea.scrollHeight + 'px'
-  }else{
-    textarea.style.height = '50px'
   }
+  // Note: The else case was removed because it would never execute
+  // since if textarea is falsy, we can't set its style property
 }
 
 // 滚动到底部
@@ -130,7 +142,14 @@ const scrollToBottom = async () => {
 }
 
 // 文件类型限制
-const FILE_LIMITS = {
+const FILE_LIMITS: {
+  [key: string]: {
+    maxSize: number;
+    maxFiles?: number;
+    maxDuration?: number;
+    description: string;
+  }
+} = {
   image: { 
     maxSize: 10 * 1024 * 1024,  // 单个文件 10MB
     maxFiles: 3,                 // 最多 3 个文件
@@ -156,7 +175,7 @@ const triggerFileInput = () => {
 }
 
 // 检查文件是否符合要求
-const validateFile = async (file) => {
+const validateFile = async (file: File) => {
   const type = file.type.split('/')[0]
   const limit = FILE_LIMITS[type]
   
@@ -170,7 +189,7 @@ const validateFile = async (file) => {
   
   if ((type === 'audio' || type === 'video') && limit.maxDuration) {
     try {
-      const duration = await getMediaDuration(file)
+      const duration = await getMediaDuration(file) as number
       if (duration > limit.maxDuration) {
         return { 
           valid: false, 
@@ -186,7 +205,7 @@ const validateFile = async (file) => {
 }
 
 // 获取媒体文件时长
-const getMediaDuration = (file) => {
+const getMediaDuration = (file: File) => {
   return new Promise((resolve, reject) => {
     const element = file.type.startsWith('audio/') ? new Audio() : document.createElement('video')
     element.preload = 'metadata'
@@ -206,8 +225,9 @@ const getMediaDuration = (file) => {
 }
 
 // 修改文件上传处理函数
-const handleFileUpload = async (event) => {
-  const files = Array.from(event.target.files || [])
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const files = Array.from(target.files || [])
   if (!files.length) return
   
   // 检查所有文件类型是否一致
@@ -216,7 +236,7 @@ const handleFileUpload = async (event) => {
   
   if (hasInconsistentType) {
     alert('请选择相同类型的文件（图片、音频或视频）')
-    event.target.value = ''
+    target.value = ''
     return
   }
 
@@ -225,7 +245,7 @@ const handleFileUpload = async (event) => {
     const { valid, error } = await validateFile(file)
     if (!valid) {
       alert(error)
-      event.target.value = ''
+      target.value = ''
       selectedFiles.value = []
       return
     }
@@ -234,9 +254,9 @@ const handleFileUpload = async (event) => {
   // 检查文件总大小
   const totalSize = files.reduce((sum, file) => sum + file.size, 0)
   const limit = FILE_LIMITS[firstFileType]
-  if (totalSize > limit.maxSize * 3) { // 允许最多3个文件的总大小
+  if (limit && totalSize > (limit.maxSize * 3)) { // 允许最多3个文件的总大小
     alert(`${firstFileType === 'image' ? '图片' : firstFileType === 'audio' ? '音频' : '视频'}文件总大小不能超过${(limit.maxSize * 3) / 1024 / 1024}MB`)
-    event.target.value = ''
+    target.value = ''
     selectedFiles.value = []
     return
   }
@@ -248,7 +268,7 @@ const handleFileUpload = async (event) => {
 const getPlaceholder = () => {
   if (selectedFiles.value.length > 0) {
     const type = selectedFiles.value[0].type.split('/')[0]
-    const desc = FILE_LIMITS[type].description
+    const desc = FILE_LIMITS[type]?.description || '文件'
     return `已选择 ${selectedFiles.value.length} 个${desc}，可继续输入消息...`
   }
   return '输入消息，可上传图片、音频或视频...'
@@ -262,7 +282,7 @@ const sendMessage = async () => {
   const messageContent = userInput.value.trim()
   
   // 添加用户消息
-  const userMessage = {
+  const userMessage: Message = {
     role: 'user',
     content: messageContent,
     timestamp: new Date()
@@ -284,7 +304,7 @@ const sendMessage = async () => {
   })
   
   // 添加助手消息占位
-  const assistantMessage = {
+  const assistantMessage: Message = {
     role: 'assistant',
     content: '',
     timestamp: new Date()
@@ -293,7 +313,7 @@ const sendMessage = async () => {
   isStreaming.value = true
   
   try {
-    const reader = await chatAPI.sendMessage(formData, currentChatId.value)
+    const reader = await chatAPI.sendMessage(formData, currentChatId.value || undefined)
     const decoder = new TextDecoder('utf-8')
     let accumulatedContent = ''  // 添加累积内容变量
     
@@ -307,7 +327,7 @@ const sendMessage = async () => {
         
         await nextTick(() => {
           // 更新消息，使用累积的内容
-          const updatedMessage = {
+          const updatedMessage: Message = {
             ...assistantMessage,
             content: accumulatedContent  // 使用累积的内容
           }
@@ -322,17 +342,22 @@ const sendMessage = async () => {
     }
   } catch (error) {
     console.error('发送消息失败:', error)
-    assistantMessage.content = '抱歉，发生了错误，请稍后重试。'
+    const errorMessage: Message = {
+      ...assistantMessage,
+      content: '抱歉，发生了错误，请稍后重试。'
+    }
+    const lastIndex = currentMessages.value.length - 1
+    currentMessages.value.splice(lastIndex, 1, errorMessage)
   } finally {
     isStreaming.value = false
     selectedFiles.value = [] // 清空已选文件
-    fileInput.value.value = '' // 清空文件输入
+    if (fileInput.value) fileInput.value.value = '' // 清空文件输入
     await scrollToBottom()
   }
 }
 
 // 加载特定对话
-const loadChat = async (chatId) => {
+const loadChat = async (chatId: string) => {
   currentChatId.value = chatId
   try {
     const messages = await chatAPI.getChatMessages(chatId, 'chat')
@@ -367,7 +392,7 @@ const startNewChat = () => {
   currentMessages.value = []
   
   // 添加新对话到聊天历史列表
-  const newChat = {
+  const newChat: ChatHistoryItem = {
     id: newChatId,
     title: `对话 ${newChatId.slice(-6)}`
   }
@@ -375,16 +400,17 @@ const startNewChat = () => {
 }
 
 // 格式化文件大小
-const formatFileSize = (bytes) => {
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// 移除文件
-const removeFile = (index) => {
-  selectedFiles.value = selectedFiles.value.filter((_, i) => i !== index)
-  if (selectedFiles.value.length === 0) {
+const removeFile = (index: number) => {
+  selectedFiles.value.splice(index, 1)
+  if (fileInput.value) {
     fileInput.value.value = ''  // 清空文件输入
   }
 }
@@ -821,5 +847,4 @@ onMounted(() => {
       border-radius: 0;
     }
   }
-}
-</style> 
+}</style>

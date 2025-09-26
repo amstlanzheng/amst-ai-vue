@@ -18,37 +18,34 @@
               新聊天
             </button>
           </div>
-          <div
-            v-for="chat in chatHistory"
+          <div 
+            v-for="chat in chatHistory" 
             :key="chat.id"
             class="history-item"
-            :class="{ active: currentChatId === chat.id }"
+            :class="{ 'active': currentChatId === chat.id }"
             @click="loadChat(chat.id)"
           >
             <DocumentTextIcon class="icon" />
-            <span class="title">{{ chat.title || "Markdown对话" }}</span>
+            <span class="title">{{ chat.title || 'Markdown对话' }}</span>
           </div>
         </div>
       </div>
-
+      
       <!-- 主要内容区域 -->
       <div class="chat-main">
         <!-- 未上传文件时显示上传界面 -->
-        <div
-          v-if="!currentMdContent || currentMdContent === ''"
-          class="upload-welcome"
-        >
+        <div v-if="!currentMdContent || currentMdContent === ''" class="upload-welcome">
           <h1 class="main-title">
             与任何 <span class="highlight">Markdown</span> 对话
           </h1>
-          <div
+          <div 
             class="drop-zone"
             @dragover.prevent="handleDragOver"
             @dragleave.prevent="handleDragLeave"
             @drop.prevent="handleDrop"
-            :class="{
-              dragging: isDragging,
-              uploading: isUploading,
+            :class="{ 
+              'dragging': isDragging,
+              'uploading': isUploading 
             }"
           >
             <div class="upload-content">
@@ -63,16 +60,16 @@
               <template v-else>
                 <DocumentArrowUpIcon class="upload-icon" />
                 <p class="upload-text">点击上传，或将Markdown文件拖拽到此处</p>
-                <input
+                <input 
                   type="file"
                   accept=".md,.markdown"
                   @change="handleFileUpload"
                   :disabled="isUploading"
                   class="file-input"
-                />
-                <button
+                >
+                <button 
                   class="upload-button"
-                  :class="{ uploading: isUploading }"
+                  :class="{ 'uploading': isUploading }"
                   @click="triggerFileInput"
                 >
                   <ArrowUpTrayIcon class="icon" />
@@ -85,6 +82,7 @@
 
         <!-- 已上传文件时显示分栏界面 -->
         <div v-else class="split-view">
+
           <!-- Markdown 预览组件 -->
           <div class="markdown-view">
             <div class="markdown-header">
@@ -104,7 +102,7 @@
                 :is-stream="isStreaming && index === currentMessages.length - 1"
               />
             </div>
-
+            
             <div class="input-area">
               <textarea
                 v-model="userInput"
@@ -113,8 +111,8 @@
                 rows="1"
                 ref="inputRef"
               ></textarea>
-              <button
-                class="send-button"
+              <button 
+                class="send-button" 
                 @click="sendMessage()"
                 :disabled="isStreaming || !userInput.trim()"
               >
@@ -129,542 +127,518 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  nextTick,
-  watch,
-  onUnmounted,
-  computed,
-  type Ref,
-} from "vue";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
-import {
+import { ref, onMounted, nextTick, watch, onUnmounted, computed, type Ref } from 'vue'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import { 
   DocumentArrowUpIcon,
   DocumentTextIcon,
   PaperAirplaneIcon,
   ArrowUpTrayIcon,
   PlusIcon,
   ChevronLeftIcon,
-  ChevronRightIcon,
-} from "@heroicons/vue/24/outline";
-import ChatMessage from "../components/ChatMessage.vue";
-import { chatAPI } from "../services/api";
-import { useRouter } from "vue-router";
+  ChevronRightIcon
+} from '@heroicons/vue/24/outline'
+import ChatMessage from '../components/ChatMessage.vue'
+import { chatAPI } from '../services/api'
+import { useRouter } from 'vue-router'
 
 // Define types
 interface ChatHistoryItem {
-  id: string;
-  title: string;
+  id: string
+  title: string
 }
 
 interface Message {
-  role: string;
-  content: string;
-  timestamp: Date;
-  isMarkdown?: boolean;
+  role: string
+  content: string
+  timestamp: Date
+  isMarkdown?: boolean
 }
 
-const router = useRouter();
-const messagesRef: Ref<HTMLElement | null> = ref(null);
-const inputRef: Ref<HTMLTextAreaElement | null> = ref(null);
-const userInput = ref("");
-const isStreaming = ref(false);
-const isUploading = ref(false);
-const currentChatId = ref<string | null>(null);
-const currentMessages = ref<Message[]>([]);
-const chatHistory = ref<ChatHistoryItem[]>([]);
-const currentMdName = ref("");
-const currentMdContent = ref("");
-const isDragging = ref(false);
-const isDownloadingMd = ref(false);
-const uploadingFileName = ref("");
+const router = useRouter()
+const messagesRef: Ref<HTMLElement | null> = ref(null)
+const inputRef: Ref<HTMLTextAreaElement | null> = ref(null)
+const userInput = ref('')
+const isStreaming = ref(false)
+const isUploading = ref(false)
+const currentChatId = ref<string | null>(null)
+const currentMessages = ref<Message[]>([])
+const chatHistory = ref<ChatHistoryItem[]>([])
+const currentMdName = ref('')
+const currentMdContent = ref('')
+const isDragging = ref(false)
+const isDownloadingMd = ref(false)
+const uploadingFileName = ref('')
 
-import API_CONFIG from "../config/api.ts";
+import API_CONFIG from '../config/api.ts'
 
-const BASE_URL = API_CONFIG.baseURL;
+const BASE_URL = API_CONFIG.baseURL
 
 // 配置 marked
 marked.setOptions({
   breaks: true,
   gfm: true,
-} as any);
+} as marked.MarkedOptions)
 
 // 计算渲染后的Markdown内容
 const renderedMdContent = computed(() => {
-  if (!currentMdContent.value) return "";
-  return DOMPurify.sanitize(marked.parse(currentMdContent.value) as string);
-});
+  if (!currentMdContent.value) return ''
+  return DOMPurify.sanitize(marked(currentMdContent.value) as string)
+})
 
 // 自动调整输入框高度
 const adjustTextareaHeight = () => {
-  const textarea = inputRef.value;
+  const textarea = inputRef.value
   if (textarea) {
-    textarea.style.height = "auto";
-    textarea.style.height = textarea.scrollHeight + "px";
+    textarea.style.height = 'auto'
+    textarea.style.height = textarea.scrollHeight + 'px'
   }
-};
+}
 
 // 滚动到底部
 const scrollToBottom = async () => {
-  await nextTick();
+  await nextTick()
   if (messagesRef.value) {
-    messagesRef.value.scrollTop = messagesRef.value.scrollHeight;
+    messagesRef.value.scrollTop = messagesRef.value.scrollHeight
   }
-};
+}
 
 // 修改资源清理函数
 const cleanupResources = () => {
-  currentMdName.value = "";
-  currentMdContent.value = "";
-  currentMessages.value = [];
-  currentChatId.value = null;
-  isDownloadingMd.value = false;
-  isUploading.value = false;
-  uploadingFileName.value = "";
-  userInput.value = "";
-  isStreaming.value = false;
-
+  currentMdName.value = ''
+  currentMdContent.value = ''
+  currentMessages.value = []
+  currentChatId.value = null
+  isDownloadingMd.value = false
+  isUploading.value = false
+  uploadingFileName.value = ''
+  userInput.value = ''
+  isStreaming.value = false
+  
   // 重置输入框高度
   if (inputRef.value) {
-    inputRef.value.style.height = "auto";
+    inputRef.value.style.height = 'auto'
   }
-};
+}
 
 // 修改 logo 点击处理
-const handleLogoClick = (event: Event) => {
-  event.preventDefault();
-  cleanupResources();
-  router.push("/");
-};
+const handleLogoClick = (event) => {
+  event.preventDefault()
+  cleanupResources()
+  router.push('/')
+}
 
 // 修改 startNewChat 方法
 const startNewChat = () => {
   try {
     // 清理所有状态
-    cleanupResources();
-
+    cleanupResources()
+    
     // 重置文件相关状态
-    currentMdContent.value = "";
-    currentMdName.value = "";
-    currentChatId.value = null;
-
+    currentMdContent.value = ''
+    currentMdName.value = ''
+    currentChatId.value = null
+    
     // 重置消息
-    currentMessages.value = [];
-
+    currentMessages.value = []
+    
     // 重置上传状态
-    isUploading.value = false;
-    uploadingFileName.value = "";
-
+    isUploading.value = false
+    uploadingFileName.value = ''
+    
     // 重置输入
-    userInput.value = "";
+    userInput.value = ''
     if (inputRef.value) {
-      inputRef.value.style.height = "auto";
+      inputRef.value.style.height = 'auto'
     }
-
+    
     // 重置滚动位置
     if (messagesRef.value) {
-      messagesRef.value.scrollTop = 0;
+      messagesRef.value.scrollTop = 0
     }
   } catch (error) {
-    console.error("开始新对话失败:", error);
+    console.error('开始新对话失败:', error)
   }
-};
+}
 
 // 修改 loadChat 方法
-const loadChat = async (chatId: string) => {
-  if (!chatId) return;
-
-  cleanupResources();
-  currentChatId.value = chatId;
-
+const loadChat = async (chatId) => {
+  if (!chatId) return
+  
+  cleanupResources()
+  currentChatId.value = chatId
+  
   try {
     // 加载消息历史
-    const messages = await chatAPI.getChatMessages(chatId, "md");
-    currentMessages.value = messages.map((msg) => ({
+    const messages = await chatAPI.getChatMessages(chatId, 'md')
+    currentMessages.value = messages.map(msg => ({
       ...msg,
-      isMarkdown: msg.role === "assistant",
-    }));
+      isMarkdown: msg.role === 'assistant'
+    }))
 
     // 从服务器获取 Markdown 文件下载链接
-    isDownloadingMd.value = true;
+    isDownloadingMd.value = true
     const response = await fetch(`${BASE_URL}/ai/md/file/${chatId}`, {
-      credentials: "include", // 确保携带 cookie/session 信息
-    });
-    if (!response.ok) throw new Error("获取 Markdown 失败");
-
+      credentials: 'include' // 确保携带 cookie/session 信息
+    })
+    if (!response.ok) throw new Error('获取 Markdown 失败')
+    
     // 解析 JSON 响应以获取下载链接和文件名
-    const result = await response.json();
-    if (result.code !== 1) throw new Error("获取文件下载链接失败");
-
+    const result = await response.json()
+    if (result.code !== 1) throw new Error('获取文件下载链接失败')
+    
     // 从响应中获取文件名和下载链接
-    let filename = "document.md";
+    let filename = 'document.md'
     if (result.data.fileName) {
-      console.log("filename:", result.data);
+      console.log('filename:', result.data)
       // 使用后端提供的文件名
-      filename = result.data.fileName;
+      filename = result.data.fileName
     } else if (result.data.fileUrl) {
       // 从下载链接中提取文件名
       try {
-        const url = new URL(result.data.fileUrl);
-        const pathParts = url.pathname.split("/");
+        const url = new URL(result.data.fileUrl)
+        const pathParts = url.pathname.split('/')
         if (pathParts.length > 0) {
-          const lastPart = pathParts[pathParts.length - 1];
-          console.log("filename:", lastPart);
+          const lastPart = pathParts[pathParts.length - 1]
+          console.log('filename:', lastPart)
           if (lastPart) {
-            filename = lastPart;
+            filename = lastPart
           }
         }
       } catch (e) {
-        console.warn("无法从URL解析文件名:", e);
+        console.warn('无法从URL解析文件名:', e)
       }
     }
-
+    
     // 更新当前文件名和历史记录中的标题
-    currentMdName.value = filename;
-    const chatIndex = chatHistory.value.findIndex((c) => c.id === chatId);
+    currentMdName.value = filename
+    const chatIndex = chatHistory.value.findIndex(c => c.id === chatId)
     if (chatIndex !== -1) {
-      chatHistory.value[chatIndex].title = filename;
+      chatHistory.value[chatIndex].title = filename
     }
-
+    
     // 下载文件内容
-    const fileUrl = result.data.fileUrl || result.data;
-    const fileResponse = await fetch(fileUrl);
-    if (!fileResponse.ok) throw new Error("下载文件失败");
-    const text = await fileResponse.text();
-    currentMdContent.value = text;
+    const fileUrl = result.data.fileUrl || result.data
+    const fileResponse = await fetch(fileUrl)
+    if (!fileResponse.ok) throw new Error('下载文件失败')
+    const text = await fileResponse.text()
+    currentMdContent.value = text
   } catch (error) {
-    console.error("加载失败:", error);
+    console.error('加载失败:', error)
     const errorMessage = {
-      role: "assistant",
-      content: "加载失败，请重试。",
+      role: 'assistant',
+      content: '加载失败，请重试。',
       timestamp: new Date(),
-      isMarkdown: true,
-    };
-    currentMessages.value.push(errorMessage);
+      isMarkdown: true
+    }
+    currentMessages.value.push(errorMessage)
   } finally {
-    isDownloadingMd.value = false;
+    isDownloadingMd.value = false
   }
-};
+}
 
 // 加载聊天历史
 const loadChatHistory = async () => {
   try {
-    const history = await chatAPI.getChatHistory("md");
-    chatHistory.value = history || [];
+    const history = await chatAPI.getChatHistory('md')
+    chatHistory.value = history || []
     if (history && history.length > 0) {
-      await loadChat(history[0].id);
+      await loadChat(history[0].id)
     }
   } catch (error) {
-    console.error("加载聊天历史失败:", error);
-    chatHistory.value = [];
+    console.error('加载聊天历史失败:', error)
+    chatHistory.value = []
   }
-};
+}
 
 // 处理文件拖放
-const handleDrop = async (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = false;
-
-  const files = event.dataTransfer?.files;
-  if (!files || files.length === 0) return;
-
+const handleDrop = async (event) => {
+  event.preventDefault()
+  isDragging.value = false
+  
+  const files = event.dataTransfer.files
+  if (files.length === 0) return
+  
   // 获取第一个文件
-  const file = files[0];
-
+  const file = files[0]
+  
   // 检查是否为 Markdown 文件
-  if (
-    !file.type.includes("markdown") &&
-    !file.name.match(/\.(md|markdown)$/i)
-  ) {
-    alert("请上传 Markdown 文件");
-    return;
+  if (!file.type.includes('markdown') && !file.name.match(/\.(md|markdown)$/i)) {
+    alert('请上传 Markdown 文件')
+    return
   }
-
+  
   // 设置上传状态和文件名
-  isUploading.value = true;
-  uploadingFileName.value = file.name;
-
+  isUploading.value = true
+  uploadingFileName.value = file.name
+  
   try {
     // 创建 FormData
-    const formData = new FormData();
-    formData.append("file", file);
-
+    const formData = new FormData()
+    formData.append('file', file)
+    
     // 生成临时 chatId 或使用现有的
-    const uploadChatId = currentChatId.value || `md_${Date.now()}`;
-
+    const uploadChatId = currentChatId.value || `md_${Date.now()}`
+    
     // 发送上传请求，修正 API 路径
     const response = await fetch(`${BASE_URL}/ai/md/upload/${uploadChatId}`, {
-      method: "POST",
+      method: 'POST',
       body: formData,
-      credentials: "include", // 确保携带 cookie/session 信息
-    });
-    console.log("上传结果:", response);
+      credentials: 'include'  // 确保携带 cookie/session 信息
+    })
+    console.log('上传结果:', response)
     if (!response.ok) {
-      throw new Error(`上传失败: ${response.status}`);
+      throw new Error(`上传失败: ${response.status}`)
     }
-
-    const data = await response.json();
-    const text = await file.text(); // 读取文件内容
-
+    
+    const data = await response.json()
+    const text = await file.text() // 读取文件内容
+    
     // 保存聊天 ID 和文件名
-    const chatId = data.chatId || uploadChatId;
-    currentChatId.value = chatId;
-    currentMdName.value = file.name;
-    currentMdContent.value = text;
-
+    currentChatId.value = data.chatId || uploadChatId
+    currentMdName.value = file.name
+    currentMdContent.value = text
+    
     // 添加到聊天历史
     const newChat = {
-      id: chatId,
-      title: `Markdown对话: ${file.name.slice(0, 20)}${
-        file.name.length > 20 ? "..." : ""
-      }`,
-    };
-
-    // 更新聊天历史 - 避免重复添加
-    if (!chatHistory.value.some((chat) => chat.id === chatId)) {
-      chatHistory.value = [newChat, ...chatHistory.value];
+      id: currentChatId.value,
+      title: `Markdown对话: ${file.name.slice(0, 20)}${file.name.length > 20 ? '...' : ''}`
     }
-
+    
+    // 更新聊天历史 - 避免重复添加
+    if (!chatHistory.value.some(chat => chat.id === currentChatId.value)) {
+      chatHistory.value = [newChat, ...chatHistory.value]
+    }
+    
     // 清空消息
-    currentMessages.value = [];
-
+    currentMessages.value = []
+    
     // 添加系统消息
     currentMessages.value.push({
-      role: "assistant",
+      role: 'assistant',
       content: `已上传 Markdown 文件: ${file.name}。您可以开始提问了。`,
       timestamp: new Date(),
-      isMarkdown: true,
-    });
+      isMarkdown: true
+    })
+    
   } catch (error) {
-    console.error("上传失败:", error);
-    alert("文件上传失败，请重试");
+    console.error('上传失败:', error)
+    alert('文件上传失败，请重试')
   } finally {
-    isUploading.value = false;
-    uploadingFileName.value = "";
+    isUploading.value = false
+    uploadingFileName.value = ''
   }
-};
+}
 
 // 处理拖拽悬停
-const handleDragOver = (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = true;
-};
+const handleDragOver = (event) => {
+  event.preventDefault()
+  isDragging.value = true
+}
 
 // 处理拖拽离开
-const handleDragLeave = (event: DragEvent) => {
-  event.preventDefault();
-  isDragging.value = false;
-};
+const handleDragLeave = (event) => {
+  event.preventDefault()
+  isDragging.value = false
+}
 
 const triggerFileInput = () => {
-  const fileInput = document.querySelector(".file-input") as HTMLInputElement;
-  fileInput?.click();
-};
+  const fileInput = document.querySelector('.file-input')
+  fileInput.click()
+}
 
 // 添加上传文件名状态（如果还没有的话）
-// const uploadingFileName = ref('') // This declaration is already present above
+const uploadingFileName = ref('')
 
 // 修改 sendMessage 方法
 const sendMessage = async () => {
-  if (!userInput.value.trim() || isStreaming.value) return;
-
+  if (!userInput.value.trim() || isStreaming.value) return
+  
   // 添加用户消息到聊天记录
   const userMessage = {
-    role: "user",
+    role: 'user',
     content: userInput.value,
-    timestamp: new Date(),
-  };
-  currentMessages.value.push(userMessage);
-
-  // 清空输入框并调整高度
-  const input = userInput.value;
-  userInput.value = "";
-  if (inputRef.value) {
-    inputRef.value.style.height = "auto";
+    timestamp: new Date()
   }
-
+  currentMessages.value.push(userMessage)
+  
+  // 清空输入框并调整高度
+  const input = userInput.value
+  userInput.value = ''
+  if (inputRef.value) {
+    inputRef.value.style.height = 'auto'
+  }
+  
   // 滚动到底部
-  await scrollToBottom();
-
+  await scrollToBottom()
+  
   // 添加一个空的助手消息作为流式响应的容器
-  const assistantMessageIndex = currentMessages.value.length;
+  const assistantMessageIndex = currentMessages.value.length
   currentMessages.value.push({
-    role: "assistant",
-    content: "",
+    role: 'assistant',
+    content: '',
     timestamp: new Date(),
-    isMarkdown: true,
-  });
-
+    isMarkdown: true
+  })
+  
   try {
-    isStreaming.value = true;
-
+    isStreaming.value = true
+    
     // 发送请求到服务器
-    const url = new URL(`${BASE_URL}/ai/md/chat`);
-    url.searchParams.append("prompt", input);
+    const url = new URL(`${BASE_URL}/ai/md/chat`)
+    url.searchParams.append('prompt', input)
     if (currentChatId.value) {
-      url.searchParams.append("chatId", currentChatId.value);
+      url.searchParams.append('chatId', currentChatId.value)
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
 
     const response = await fetch(url, {
-      method: "GET",
-      credentials: "include",
+      method: 'GET',
+      credentials: 'include',
       headers: {
-        Accept: "application/json",
+        'Accept': 'application/json',
       },
-      signal: controller.signal,
-    });
+      signal: controller.signal
+    })
 
-    clearTimeout(timeoutId);
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error: ${response.status}`)
     }
 
     // 返回可读流
-    if (!response.body) {
-      throw new Error("Response body is null");
-    }
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let result = "";
-
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let result = ''
+    
     // 处理流式响应
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-      console.log("收到流式响应块:", chunk);
-      result += chunk;
-
+      const { done, value } = await reader.read()
+      if (done) break
+      
+      const chunk = decoder.decode(value, { stream: true })
+      console.log('收到流式响应块:', chunk)
+      result += chunk
+      
       // 使用索引直接替换整个消息对象，强制触发响应式更新
       currentMessages.value[assistantMessageIndex] = {
-        role: "assistant",
+        role: 'assistant',
         content: result,
         timestamp: new Date(),
-        isMarkdown: true,
-      };
-
+        isMarkdown: true
+      }
+      
       // 确保 DOM 更新并滚动到底部
-      await nextTick();
-      await scrollToBottom();
+      await nextTick()
+      await scrollToBottom()
     }
+    
   } catch (error) {
-    console.error("发送消息失败10001:", error);
+    console.error('发送消息失败10001:', error)
     currentMessages.value[assistantMessageIndex] = {
-      role: "assistant",
-      content: "发送消息失败，请重试。",
+      role: 'assistant',
+      content: '发送消息失败，请重试。',
       timestamp: new Date(),
-      isMarkdown: true,
-    };
+      isMarkdown: true
+    }
   } finally {
-    isStreaming.value = false;
-    await scrollToBottom();
+    isStreaming.value = false
+    await scrollToBottom()
   }
-};
+}
 
 // 同样需要修改文件上传处理函数
-const handleFileUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const files = target.files;
-  if (!files || files.length === 0) return;
-
-  const file = files[0];
-
+const handleFileUpload = async (event) => {
+  const files = event.target.files
+  if (files.length === 0) return
+  
+  const file = files[0]
+  
   // 检查是否为 Markdown 文件
-  if (
-    !file.type.includes("markdown") &&
-    !file.name.match(/\.(md|markdown)$/i)
-  ) {
-    alert("请上传 Markdown 文件");
-    return;
+  if (!file.type.includes('markdown') && !file.name.match(/\.(md|markdown)$/i)) {
+    alert('请上传 Markdown 文件')
+    return
   }
-
+  
   // 设置上传状态和文件名
-  isUploading.value = true;
-  uploadingFileName.value = file.name;
-
+  isUploading.value = true
+  uploadingFileName.value = file.name
+  
   try {
     // 创建 FormData
-    const formData = new FormData();
-    formData.append("file", file);
-
+    const formData = new FormData()
+    formData.append('file', file)
+    
     // 生成临时 chatId 或使用现有的
-    const uploadChatId = currentChatId.value || `md_${Date.now()}`;
-
+    const uploadChatId = currentChatId.value || `md_${Date.now()}`
+    
     // 发送上传请求，修正 API 路径
     const response = await fetch(`${BASE_URL}/ai/md/upload/${uploadChatId}`, {
-      method: "POST",
+      method: 'POST',
       body: formData,
-      credentials: "include", // 确保携带 cookie/session 信息
-    });
+      credentials: 'include'  // 确保携带 cookie/session 信息
+    })
 
-    console.log("上传结果:", response);
+        console.log('上传结果:', response)
     if (!response.ok) {
-      throw new Error(`上传失败: ${response.status}`);
+      throw new Error(`上传失败: ${response.status}`)
     }
-
-    const data = await response.json();
-    const text = await file.text(); // 读取文件内容
-
+    
+    const data = await response.json()
+    const text = await file.text() // 读取文件内容
+    
     // 保存聊天 ID 和文件名
-    const chatId = data.chatId || uploadChatId;
-    currentChatId.value = chatId;
-    currentMdName.value = file.name;
-    currentMdContent.value = text;
-
+    currentChatId.value = data.chatId || uploadChatId
+    currentMdName.value = file.name
+    currentMdContent.value = text
+    
     // 添加到聊天历史
     const newChat = {
-      id: chatId,
-      title: `Markdown对话: ${file.name.slice(0, 20)}${
-        file.name.length > 20 ? "..." : ""
-      }`,
-    };
-
-    // 更新聊天历史 - 避免重复添加
-    if (!chatHistory.value.some((chat) => chat.id === chatId)) {
-      chatHistory.value = [newChat, ...chatHistory.value];
+      id: currentChatId.value,
+      title: `Markdown对话: ${file.name.slice(0, 20)}${file.name.length > 20 ? '...' : ''}`
     }
-
+    
+    // 更新聊天历史 - 避免重复添加
+    if (!chatHistory.value.some(chat => chat.id === currentChatId.value)) {
+      chatHistory.value = [newChat, ...chatHistory.value]
+    }
+    
     // 清空消息
-    currentMessages.value = [];
-
+    currentMessages.value = []
+    
     // 添加系统消息
     currentMessages.value.push({
-      role: "assistant",
+      role: 'assistant',
       content: `已上传 Markdown 文件: ${file.name}。您可以开始提问了。`,
       timestamp: new Date(),
-      isMarkdown: true,
-    });
+      isMarkdown: true
+    })
+    
   } catch (error) {
-    console.error("上传失败:", error);
-    alert("文件上传失败，请重试");
+    console.error('上传失败:', error)
+    alert('文件上传失败，请重试')
   } finally {
-    isUploading.value = false;
-    uploadingFileName.value = "";
+    isUploading.value = false
+    uploadingFileName.value = ''
     // 清空文件输入，允许重新选择同一文件
-    if (event.target) {
-      const target = event.target as HTMLInputElement;
-      target.value = "";
-    }
+    event.target.value = ''
   }
-};
+}
 
 // 监听清理事件
 onMounted(() => {
-  loadChatHistory();
-  adjustTextareaHeight();
-});
+  loadChatHistory()
+  adjustTextareaHeight()
+})
 
 onUnmounted(() => {
   // 移除事件监听器
-  window.removeEventListener("cleanupChatPDF", cleanupResources);
-});
+  window.removeEventListener('cleanupChatPDF', cleanupResources)
+})
 </script>
 
 <style scoped lang="scss">
@@ -698,7 +672,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-
+    
     .sidebar-header {
       padding: 1.5rem;
       display: flex;
@@ -713,7 +687,7 @@ onUnmounted(() => {
         text-decoration: none;
         color: inherit;
         transition: opacity 0.2s;
-
+        
         &:hover {
           opacity: 0.8;
         }
@@ -733,18 +707,18 @@ onUnmounted(() => {
         -webkit-text-fill-color: transparent;
       }
     }
-
+    
     .history-list {
       flex: 1;
       overflow-y: auto;
       padding: 1rem 0;
-
+      
       .history-header {
         padding: 0.5rem 1.5rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
-
+        
         span {
           font-size: 0.875rem;
           font-weight: 500;
@@ -775,7 +749,7 @@ onUnmounted(() => {
           }
         }
       }
-
+      
       .history-item {
         display: flex;
         align-items: center;
@@ -783,29 +757,29 @@ onUnmounted(() => {
         padding: 0.75rem 1.5rem;
         cursor: pointer;
         transition: background-color 0.2s;
-
+        
         &:hover {
           background: rgba(0, 0, 0, 0.05);
         }
-
+        
         &.active {
           background: rgba(147, 51, 234, 0.1);
-
+          
           .icon {
             color: #9333ea;
           }
-
+          
           .title {
             color: #9333ea;
           }
         }
-
+        
         .icon {
           width: 1.25rem;
           height: 1.25rem;
           color: #666;
         }
-
+        
         .title {
           flex: 1;
           overflow: hidden;
@@ -846,7 +820,7 @@ onUnmounted(() => {
         color: #333;
       }
     }
-
+    
     .messages {
       flex: 1;
       overflow-y: auto;
@@ -868,7 +842,7 @@ onUnmounted(() => {
         }
       }
     }
-
+    
     .input-area {
       flex-shrink: 0;
       padding: 1.5rem 2rem;
@@ -877,7 +851,7 @@ onUnmounted(() => {
       display: flex;
       gap: 1rem;
       align-items: flex-end;
-
+      
       textarea {
         flex: 1;
         resize: none;
@@ -890,7 +864,7 @@ onUnmounted(() => {
         font-size: 1rem;
         line-height: 1.5;
         max-height: 150px;
-
+        
         &:focus {
           outline: none;
           border-color: #333;
@@ -902,7 +876,7 @@ onUnmounted(() => {
           cursor: not-allowed;
         }
       }
-
+      
       .send-button {
         background: #333;
         color: white;
@@ -915,16 +889,16 @@ onUnmounted(() => {
         justify-content: center;
         cursor: pointer;
         transition: background-color 0.3s;
-
+        
         &:hover:not(:disabled) {
           background: #000;
         }
-
+        
         &:disabled {
           background: #ccc;
           cursor: not-allowed;
         }
-
+        
         .icon {
           width: 1.25rem;
           height: 1.25rem;
@@ -976,10 +950,10 @@ onUnmounted(() => {
       }
     }
   }
-
+  
   .chat-main {
     background: rgba(40, 40, 40, 0.95);
-
+    
     .pdf-header {
       background: rgba(30, 30, 30, 0.98);
       border-bottom-color: rgba(255, 255, 255, 0.05);
@@ -1006,12 +980,12 @@ onUnmounted(() => {
     .input-area {
       background: rgba(30, 30, 30, 0.98);
       border-top-color: rgba(255, 255, 255, 0.05);
-
+      
       textarea {
         background: rgba(50, 50, 50, 0.95);
         border-color: rgba(255, 255, 255, 0.1);
         color: white;
-
+        
         &:focus {
           border-color: #666;
           box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
@@ -1067,7 +1041,7 @@ onUnmounted(() => {
 
     &.uploading {
       border-style: dashed;
-      border-color: #007cf0;
+      border-color: #007CF0;
       background: rgba(0, 124, 240, 0.05);
     }
 
@@ -1088,7 +1062,7 @@ onUnmounted(() => {
           width: 48px;
           height: 48px;
           border: 4px solid rgba(0, 124, 240, 0.1);
-          border-left-color: #007cf0;
+          border-left-color: #007CF0;
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }
@@ -1098,7 +1072,7 @@ onUnmounted(() => {
 
           .status-text {
             font-size: 1.25rem;
-            color: #007cf0;
+            color: #007CF0;
             margin-bottom: 0.5rem;
           }
 
@@ -1171,7 +1145,7 @@ onUnmounted(() => {
       }
 
       &.uploading {
-        border-color: #007cf0;
+        border-color: #007CF0;
         background: rgba(0, 124, 240, 0.1);
       }
 
@@ -1179,12 +1153,12 @@ onUnmounted(() => {
         .upload-status {
           .spinner {
             border-color: rgba(0, 124, 240, 0.2);
-            border-left-color: #007cf0;
+            border-left-color: #007CF0;
           }
 
           .upload-progress {
             .status-text {
-              color: #007cf0;
+              color: #007CF0;
             }
 
             .filename {
@@ -1316,7 +1290,7 @@ onUnmounted(() => {
     }
 
     .pdf-content {
-      position: relative; // 添加相对定位
+      position: relative;  // 添加相对定位
       flex: 1;
       overflow-y: auto;
       background: #f1f1f1;
@@ -1335,8 +1309,8 @@ onUnmounted(() => {
         flex-direction: column;
         align-items: center;
         gap: 1rem;
-        z-index: 10; // 确保加载提示在最上层
-        background: rgba(255, 255, 255, 0.9); // 添加半透明背景
+        z-index: 10;  // 确保加载提示在最上层
+        background: rgba(255, 255, 255, 0.9);  // 添加半透明背景
         padding: 2rem;
         border-radius: 1rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -1345,7 +1319,7 @@ onUnmounted(() => {
           width: 48px;
           height: 48px;
           border: 4px solid rgba(0, 124, 240, 0.1);
-          border-left-color: #007cf0;
+          border-left-color: #007CF0;
           border-radius: 50%;
           animation: spin 1s linear infinite;
         }
@@ -1389,7 +1363,7 @@ onUnmounted(() => {
       display: flex;
       gap: 1rem;
       align-items: flex-end;
-
+      
       textarea {
         flex: 1;
         resize: none;
@@ -1402,7 +1376,7 @@ onUnmounted(() => {
         font-size: 1rem;
         line-height: 1.5;
         max-height: 150px;
-
+        
         &:focus {
           outline: none;
           border-color: #333;
@@ -1414,7 +1388,7 @@ onUnmounted(() => {
           cursor: not-allowed;
         }
       }
-
+      
       .send-button {
         background: #333;
         color: white;
@@ -1427,16 +1401,16 @@ onUnmounted(() => {
         justify-content: center;
         cursor: pointer;
         transition: background-color 0.3s;
-
+        
         &:hover:not(:disabled) {
           background: #000;
         }
-
+        
         &:disabled {
           background: #ccc;
           cursor: not-allowed;
         }
-
+        
         .icon {
           width: 1.25rem;
           height: 1.25rem;
@@ -1487,7 +1461,7 @@ onUnmounted(() => {
         .pdf-loading {
           .loading-spinner {
             border-color: rgba(0, 124, 240, 0.2);
-            border-left-color: #007cf0;
+            border-left-color: #007CF0;
           }
 
           .loading-text {
@@ -1504,7 +1478,7 @@ onUnmounted(() => {
     .chat-view {
       background: #1a1a1a;
     }
-
+    
     .markdown-view {
       border-right-color: rgba(255, 255, 255, 0.1);
       background: #1a1a1a;
@@ -1557,11 +1531,11 @@ onUnmounted(() => {
       padding: 0;
       margin-top: 0; /* 重置顶部边距 */
     }
-
+    
     .sidebar {
       display: none;
     }
-
+    
     .chat-main {
       border-radius: 0;
     }
@@ -1570,11 +1544,6 @@ onUnmounted(() => {
 
 // 添加动画
 @keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
-</style>
