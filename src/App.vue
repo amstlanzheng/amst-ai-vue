@@ -13,15 +13,13 @@ import BasicLayout from './layouts/BasicLayout.vue';
 </template>
 
 <style lang="scss">
-::-webkit-scrollbar {
-  display: none;
+#app {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
-* {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
+/* 全局滚动条样式 */
 *::-webkit-scrollbar {
   width: 6px;
   height: 6px;

@@ -56,7 +56,7 @@ const aiApps = ref([
     id: 4,
     title: 'ChatMD',
     description: '打造你的个人知识库，与知识库自由对话',
-    route: '/ai/chat-pdf',
+    route: '/ai/chat-markdown',
     icon: DocumentTextIcon
   }
 ])
@@ -64,8 +64,10 @@ const aiApps = ref([
 
 <style scoped lang="scss">
 .home {
-  min-height: 100vh;
-  padding: 2rem;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  padding: 1rem;
   background: var(--bg-color);
   transition: background-color 0.3s;
 
@@ -216,4 +218,4 @@ const aiApps = ref([
     }
   }
 }
-</style> 
+</style>

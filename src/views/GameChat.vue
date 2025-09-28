@@ -365,6 +365,7 @@ onMounted(() => {
     border-radius: 1rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     overflow: hidden;
+    padding-bottom: 100px; /* 为固定输入框留出空间 */
 
     .game-stats {
       position: sticky;
@@ -436,19 +437,30 @@ onMounted(() => {
     }
 
     .messages {
-      flex: 1;
+      min-height: 100px;
+      height: auto;
+      max-height: 60vh;
+      flex-shrink: 1;
+      flex-basis: auto;
       overflow-y: auto;
       padding: 2rem;
     }
 
     .input-area {
-      flex-shrink: 0;
-      padding: 1.5rem 2rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: rgba(255, 255, 255, 0.98);
       border-top: 1px solid rgba(0, 0, 0, 0.05);
       display: flex;
       gap: 1rem;
       align-items: flex-end;
+      padding: 1.5rem 2rem;
+      z-index: 100;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
 
       textarea {
         flex: 1;
@@ -605,4 +617,4 @@ onMounted(() => {
     transform: scale(1.2);
   }
 }
-</style> 
+</style>

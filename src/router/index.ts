@@ -3,7 +3,8 @@ import HomeView from '../views/HomeView.vue'
 import AIChat from '@/views/AIChat.vue'
 import ComfortSimulator from '@/views/ComfortSimulator.vue'
 import CustomerService from '@/views/CustomerService.vue'
-import ChatPDF from '@/views/ChatPDF.vue'
+import ChatMarkdown from '@/views/ChatMarkdown.vue'
+import ChatPDFDebug from '@/views/ChatPDFDebug.vue'
 import GameChat from '@/views/GameChat.vue'
 import Home from '@/views/Home.vue'
 import UserLoginPage from '@/views/user/UserLoginPage.vue'
@@ -39,9 +40,14 @@ const routes: Array<RouteRecordRaw> = [
     component: CustomerService
   },
   {
-    path: '/ai/chat-pdf',
-    name: 'ChatPDF',
-    component: ChatPDF
+    path: '/ai/chat-markdown',
+    name: 'ChatMarkdown',
+    component: ChatMarkdown
+  },
+  {
+    path: '/ai/chat-pdf-debug',
+    name: 'ChatPDFDebug',
+    component: ChatPDFDebug
   },
   {
     path: '/ai/game',

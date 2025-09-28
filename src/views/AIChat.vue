@@ -532,22 +532,34 @@ onMounted(() => {
     backdrop-filter: blur(10px);
     border-radius: 1rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    overflow: hidden;  // 防止内容溢出
+    overflow: hidden;
+    padding-bottom: 100px; /* 为固定输入框留出空间 */
     
     .messages {
-      flex: 1;
-      overflow-y: auto;  // 只允许消息区域滚动
-      padding: 2rem;
+      min-height: 100px;
+      height: auto;
+      max-height: 60vh;
+      flex-shrink: 1;
+      flex-basis: auto;
+      overflow-y: auto;
+      padding: 1rem;
     }
     
     .input-area {
-      flex-shrink: 0;
-      padding: 1.5rem 2rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: rgba(255, 255, 255, 0.98);
       border-top: 1px solid rgba(0, 0, 0, 0.05);
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      padding: 1.5rem 2rem;
+      z-index: 100;
+      width: 100%;
+      max-width: 1800px;
+      margin: 0 auto;
 
       .selected-files {
         background: rgba(0, 0, 0, 0.02);
@@ -847,4 +859,5 @@ onMounted(() => {
       border-radius: 0;
     }
   }
-}</style>
+}
+</style>

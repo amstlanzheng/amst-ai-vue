@@ -11,6 +11,7 @@ import { createDiscreteApi } from "naive-ui";
 const { message } = createDiscreteApi(["message"]);
 
 router.beforeEach(async (to, from, next) => {
+  const { useLoginUserStore } = await import("@/stores/useLoginUserStore");
   const loginUserStore = useLoginUserStore();
   // 确保获取到最新的用户信息
   await loginUserStore.getLoginUser();
@@ -25,6 +26,7 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
+  // 所有AI页面都需要登录
   if (toURL.startsWith("/ai")) {
     if (!loginUser || !loginUser.isLogin) {
       message.error("请先登录！！");
