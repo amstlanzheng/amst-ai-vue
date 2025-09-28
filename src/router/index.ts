@@ -1,0 +1,83 @@
+import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import HomeView from '../views/HomeView.vue'
+import AIChat from '@/views/AIChat.vue'
+import ComfortSimulator from '@/views/ComfortSimulator.vue'
+import CustomerService from '@/views/CustomerService.vue'
+import ChatMarkdown from '@/views/ChatMarkdown.vue'
+import ChatPDFDebug from '@/views/ChatPDFDebug.vue'
+import GameChat from '@/views/GameChat.vue'
+import Home from '@/views/Home.vue'
+import UserLoginPage from '@/views/user/UserLoginPage.vue'
+import UserRegisterPage from '@/views/user/UserRegisterPage.vue'
+import UserManangePage from '@/views/admin/UserManangePage.vue'
+import NavbarDemo from '@/views/NavbarDemo.vue'
+
+const routes: Array<RouteRecordRaw> = [
+
+  {
+    path: '/',
+    name: 'HomeView',
+    component: HomeView
+  },
+    {
+    path: '/home',
+    name: 'Home',
+    component: Home
+  },
+  {
+    path: '/ai/ai-chat',
+    name: 'AIChat',
+    component: AIChat
+  },
+  {
+    path: '/ai/comfort-simulator',
+    name: 'ComfortSimulator',
+    component: ComfortSimulator
+  },
+  {
+    path: '/ai/customer-service',
+    name: 'CustomerService',
+    component: CustomerService
+  },
+  {
+    path: '/ai/chat-markdown',
+    name: 'ChatMarkdown',
+    component: ChatMarkdown
+  },
+  {
+    path: '/ai/chat-pdf-debug',
+    name: 'ChatPDFDebug',
+    component: ChatPDFDebug
+  },
+  {
+    path: '/ai/game',
+    name: 'game',
+    component: GameChat
+  },
+  {
+    path: '/user/login',
+    name: 'login',
+    component: UserLoginPage
+  },
+  {
+    path: '/user/register',
+    name: 'register',
+    component: UserRegisterPage
+  },
+  {
+    path: '/admin/manage',
+    name: 'currentUser',
+    component: UserManangePage
+  },
+  {
+    path: '/demo/navbar',
+    name: 'NavbarDemo',
+    component: NavbarDemo
+  },
+]
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router

@@ -1,0 +1,53 @@
+@import './base.css';
+
+#app {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: var(--color-text);
+  transition: 0.2s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .dark a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@media (min-width: 1024px) {
+  #app {
+    display: block;
+    padding: 0;
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
