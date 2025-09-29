@@ -1,8 +1,10 @@
 <template>
   <div id="homeView">
     <div class="header">
-      <n-h1>AI应用中心</n-h1>
-      <p class="subtitle">探索智能未来，体验科技魅力</p>
+      <div class="header-content">
+        <n-h1>AI应用中心</n-h1>
+        <p class="subtitle">探索智能未来，体验科技魅力</p>
+      </div>
     </div>
     
 
@@ -54,28 +56,35 @@ const openModal = () => {
   margin: 0 auto;
 }
 
-
-
 .header {
-  margin-bottom: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+
 }
 
-h1 {
+.header-content {
+  text-align: center;
+}
+
+.header-content h1 {
   font-size: 2.8rem;
   font-weight: 700;
   color: #4a5568;
-  margin-bottom: 15px;
+  margin: 0 0 15px 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1.2;
 }
 
-.subtitle {
+.header-content .subtitle {
   font-size: 1.2rem;
   color: #718096;
-  margin-bottom: 30px;
+  margin: 0;
   font-weight: 400;
+  line-height: 1.5;
 }
 
 .welcome-text {
@@ -199,11 +208,13 @@ h1 {
   background-size: 20px 20px;
   animation: move 1s linear infinite;
 }
+
 .features-header{
   width: 100%;
   margin: 0 auto;
   text-align: center;
 }
+
 @keyframes move {
   0% {
     background-position: 0 0;
@@ -218,7 +229,7 @@ h1 {
     padding: 30px 20px;
   }
   
-  h1 {
+  .header h1 {
     font-size: 2.2rem;
   }
   
@@ -231,5 +242,4 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
-
 </style>

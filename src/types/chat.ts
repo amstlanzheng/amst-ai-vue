@@ -8,4 +8,8 @@ export interface Message {
   content: string
   timestamp: Date
   isMarkdown?: boolean
+  createdAt?: string | number | Date
+  contentType?: string
+  think?: string
+  fileName?: string
 }

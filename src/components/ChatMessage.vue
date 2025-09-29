@@ -7,13 +7,13 @@
     <div class="content">
       <div class="time-name">
         <span class="name">{{ message.role === 'user' ? '你' : '小助手' }}</span>
-        <span v-if="formatTime(message.createdAt)" class="time">{{ formatTime(message.createdAt) }}</span>
+        <span v-if="message.createdAt && formatTime(message.createdAt)" class="time">{{ formatTime(message.createdAt) }}</span>
       </div>
       
       <div class="text-container">
         <div :class="['text', { 'markdown-content': message.contentType === 'text' }]">
           <template v-if="message.contentType === 'text'">
-            <MarkdownPreview :content="message.content" />
+            <MarkdownPreview :content="message.content" :fileName="message.fileName || 'file.md'" />
           </template>
           <template v-else>
             {{ message.content }}

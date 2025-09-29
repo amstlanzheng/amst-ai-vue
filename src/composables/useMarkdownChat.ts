@@ -90,21 +90,6 @@ export const useMarkdownChatCore = (
       let filename = 'document.md';
       if (result.data.fileName) {
         filename = result.data.fileName;
-      } else if (result.data.fileUrl) {
-        // 从下载链接中提取文件名
-        try {
-          const url = new URL(result.data.fileUrl);
-          const pathParts = url.pathname.split('/');
-          if (pathParts.length > 0) {
-            const lastPart = pathParts[pathParts.length - 1];
-            if (lastPart) {
-              filename = lastPart;
-              console.log('文件名:', filename);
-            }
-          }
-        } catch (e) {
-          console.warn('无法从URL解析文件名:', e);
-        }
       }
 
       // 更新当前文件名和历史记录中的标题
@@ -114,9 +99,13 @@ export const useMarkdownChatCore = (
         chatHistory.value[chatIndex].title = filename;
       }
 
-      // 下载文件内容
-      const fileUrl = result.data.fileUrl || result.data;
-      const fileResponse = await fetch(fileUrl);
+      // 通过代理下载文件内容，避免直接访问 HTTP 地址
+      const proxyUrl = `${BASE_URL}/ai/md/proxy/${chatId}`;
+      const fileResponse = await fetch(proxyUrl, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
       if (!fileResponse.ok) throw new Error('下载文件失败');
       const text = await fileResponse.text();
       currentMdContent.value = text;
@@ -145,11 +134,17 @@ export const useMarkdownChatCore = (
     }
   };
 
+  // 开始新聊天
+  const startNewChat = () => {
+    cleanupResources();
+  };
+
   return {
     loadChat,
     loadChatHistory,
     cleanupResources,
-    scrollToBottom
+    scrollToBottom,
+    startNewChat
   };
 };
 
@@ -389,7 +384,7 @@ export const useMarkdownChat = (
   isStreaming: Ref<boolean>,
   messagesRef: Ref<HTMLElement | null>
 ) => {
-  const { loadChat, loadChatHistory, cleanupResources, scrollToBottom } = useMarkdownChatCore(
+  const { loadChat, loadChatHistory, cleanupResources, scrollToBottom, startNewChat } = useMarkdownChatCore(
     currentMessages,
     chatHistory,
     currentChatId,
@@ -424,6 +419,7 @@ export const useMarkdownChat = (
     handleFileSelected,
     sendMessage,
     cleanupResources,
-    scrollToBottom
+    scrollToBottom,
+    startNewChat
   };
 };
