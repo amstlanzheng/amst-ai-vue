@@ -11,6 +11,10 @@ import { createDiscreteApi } from "naive-ui";
 const { message } = createDiscreteApi(["message"]);
 
 router.beforeEach(async (to, from, next) => {
+	// 不拦截登录页面，注册页面
+	if (to.path === "/user/login" || to.path === "/user/register") {
+		return next();
+	}
   const { useLoginUserStore } = await import("@/stores/useLoginUserStore");
   const loginUserStore = useLoginUserStore();
   // 确保获取到最新的用户信息

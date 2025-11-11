@@ -35,7 +35,7 @@
               </n-col>
               <n-col :span="24">
                 <div class="form-footer">
-                  <a href="#" class="footer-link">忘记密码?</a>
+                  <!-- <a href="#" class="footer-link">忘记密码?</a> -->
                   <a href="#" class="footer-link" @click="handleRegisterButtonClick">注册账号</a>
                 </div>
               </n-col>

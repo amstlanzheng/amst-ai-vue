@@ -35,7 +35,7 @@
               <n-input
                 v-model:value="modelRef.planetCode"
 
-                placeholder="请输入密码"
+                placeholder="邀请码找网站所有者索要"
                 @keydown.enter.prevent
               />
             </n-form-item>
@@ -178,7 +178,7 @@ const handleValidateButtonClick = async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 70vh;
+  height: 100%;
   width: 1200px;
   padding: 20px;
   background-color: linear-gradient(to right, #fefefe, #fff);
